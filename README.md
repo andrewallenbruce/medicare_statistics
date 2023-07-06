@@ -8,10 +8,6 @@
 
 ## Medicare Enrollment
 
-``` r
-medicare_enrollment <- "https://docs.google.com/spreadsheets/d/11r-Lt-Q3eXRx-wGLxaMF7ymUhZOjsKFSnZDmHp0UWkc/edit#gid=310095942"
-```
-
 Total Medicare Enrollment, 2008-2021
 
 ``` r
@@ -47,7 +43,7 @@ mdcr_enroll_ab_1 |> dplyr::select(year, total, original, ma_other) |>
   scale_y_continuous(labels = scales::comma_format())
 ```
 
-<img src="man/figures/README-unnamed-chunk-1-1.png" width="100%" /> <br>
+<img src="man/figures/README-plot1-1.png" width="100%" /> <br>
 
 ``` r
 mdcr_enroll_ab_1 |> 
@@ -67,7 +63,7 @@ mdcr_enroll_ab_1 |>
                                                    big.mark = ","))
 ```
 
-<img src="man/figures/README-unnamed-chunk-2-1.png" width="100%" />
+<img src="man/figures/README-plot2-1.png" width="100%" />
 
 <br>
 
@@ -89,7 +85,7 @@ mdcr_enroll_ab_1 |>
                                                    big.mark = ","))
 ```
 
-<img src="man/figures/README-unnamed-chunk-3-1.png" width="100%" />
+<img src="man/figures/README-plot3-1.png" width="100%" />
 
 ``` r
 mdcr_enroll_ab_1 |> dplyr::select(year, dplyr::contains("pct_chg"))
@@ -381,10 +377,6 @@ mdcr_enroll_ab_8
 
 ## Medicare Deaths
 
-``` r
-medicare_deaths <- "https://docs.google.com/spreadsheets/d/1yQ9eJe4f7KoOK4fY2_7L-sux2bJ92AO4XrDoYOr6nSY/edit#gid=264964884"
-```
-
 Total Beneficiaries by Month of Death, 2008-2021
 
 ``` r
@@ -448,24 +440,34 @@ Total Beneficiaries by Area of Residence, 2013-2021
 mdcr_enroll_ab_35 <- googlesheets4::read_sheet(
   ss = medicare_deaths, 
   sheet = "mdcr_enroll_ab_35")
+```
 
+    #> Error in `read_cells_impl_()`:
+    #> ! Client error: (429) RESOURCE_EXHAUSTED
+    #> • Either out of resource quota or reaching rate limiting. The client should
+    #>   look for google.rpc.QuotaFailure error detail for more information.
+    #> • Quota exceeded for quota metric 'Read requests' and limit 'Read requests per
+    #>   minute' of service 'sheets.googleapis.com' for consumer
+    #>   'project_number:603366585132'.
+    #> 
+    #> Error details:
+    #> • reason: RATE_LIMIT_EXCEEDED
+    #> • domain: googleapis.com
+    #> • metadata.quota_location: global
+    #> • metadata.quota_limit: ReadRequestsPerMinutePerProject
+    #> • metadata.consumer: projects/603366585132
+    #> • metadata.quota_metric: sheets.googleapis.com/read_requests
+    #> • metadata.quota_limit_value: 600
+    #> • metadata.service: sheets.googleapis.com
+    #> Links
+    #> • Description: Request a higher quota limit.
+    #>   URL: https://cloud.google.com/docs/quota#requesting_higher_quota
+
+``` r
 mdcr_enroll_ab_35
 ```
 
-    #> # A tibble: 540 × 6
-    #>     year group    area_of_residence   total    aged disabled
-    #>    <dbl> <chr>    <chr>               <dbl>   <dbl>    <dbl>
-    #>  1  2013 All      All Areas         2126488 1929475   197013
-    #>  2  2013 National United States     2087731 1893352   194379
-    #>  3  2013 State    Alabama             39755   34486     5269
-    #>  4  2013 State    Alaska               2599    2267      332
-    #>  5  2013 State    Arizona             39360   35851     3509
-    #>  6  2013 State    Arkansas            24639   21524     3115
-    #>  7  2013 State    California         197546  182475    15071
-    #>  8  2013 State    Colorado            26098   23904     2194
-    #>  9  2013 State    Connecticut         24860   23192     1668
-    #> 10  2013 State    Delaware             6312    5658      654
-    #> # ℹ 530 more rows
+    #> Error in eval(expr, envir, enclos): object 'mdcr_enroll_ab_35' not found
 
 Original Medicare Beneficiaries by Month of Death, 2008-2021
 

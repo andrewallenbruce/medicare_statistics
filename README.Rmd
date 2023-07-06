@@ -45,10 +45,9 @@ library(lubridate)
 
 ## Medicare Enrollment
 
-```{r gs_1}
+```{r gs_1, echo=FALSE}
 medicare_enrollment <- "https://docs.google.com/spreadsheets/d/11r-Lt-Q3eXRx-wGLxaMF7ymUhZOjsKFSnZDmHp0UWkc/edit#gid=310095942"
 ```
-
 
 
 Total Medicare Enrollment, 2008-2021
@@ -75,7 +74,7 @@ mdcr_enroll_ab_1 <- mdcr_enroll_ab_1 |>
 
 <br>
 
-```{r}
+```{r plot1}
 mdcr_enroll_ab_1 |> dplyr::select(year, total, original, ma_other) |> 
   plot_time_series(year, 
                    total,
@@ -87,7 +86,7 @@ mdcr_enroll_ab_1 |> dplyr::select(year, total, original, ma_other) |>
 ```
 <br>
 
-```{r}
+```{r plot2}
 mdcr_enroll_ab_1 |> 
   dplyr::select(year, dplyr::ends_with("chg") & !c(dplyr::contains("pct"))) |> 
   dplyr::filter(year != 2008) |> 
@@ -107,7 +106,7 @@ mdcr_enroll_ab_1 |>
 
 <br>
 
-```{r}
+```{r plot3}
 mdcr_enroll_ab_1 |> 
   dplyr::select(year, dplyr::ends_with("chg") & !c(dplyr::contains("pct"))) |> 
   dplyr::filter(year != 2008) |> 
@@ -240,7 +239,7 @@ mdcr_enroll_ab_8
 
 ## Medicare Deaths
 
-```{r gs_2}
+```{r gs_2, echo=FALSE}
 medicare_deaths <- "https://docs.google.com/spreadsheets/d/1yQ9eJe4f7KoOK4fY2_7L-sux2bJ92AO4XrDoYOr6nSY/edit#gid=264964884"
 ```
 
