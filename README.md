@@ -129,13 +129,6 @@ Residence, 2013-2021
 mdcr_enroll_ab_7
 ```
 
-Part A and/or Part B Enrollees, by Type of Entitlement and Area of
-Residence, 2013-2021
-
-``` r
-mdcr_enroll_ab_8
-```
-
 ## Medicare Deaths
 
 Information on all Medicare beneficiary deaths, by type of entitlement,

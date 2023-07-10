@@ -2,26 +2,6 @@
 medicare_enrollment <- "https://docs.google.com/spreadsheets/d/11r-Lt-Q3eXRx-wGLxaMF7ymUhZOjsKFSnZDmHp0UWkc/edit#gid=310095942"
 googlesheets4::gs4_deauth()
 
-# FUNCTIONS
-change_abs <- function(df, col, by) {
-  
-  df |> dplyr::mutate(
-    "{{ col }}_chg" := {{ col }} - dplyr::lag({{ col }}, order_by = {{ by }}),
-    .after = {{ col }})
-}
-
-change_pct <- function(df, col, col_abs, by) {
-  
-  df |> dplyr::mutate(
-    "{{ col }}_pct_chg" := {{ col_abs }} / dplyr::lag({{ col }}, order_by = {{ by }}),
-    .after = {{ col_abs }})
-}
-
-pct <- function(df, col, col_total) {
-  df |> dplyr::mutate(
-    "{{ col }}_pct" := {{ col }} / {{ col_total }}, .after = {{ col }})
-}
-
 # MDCR ENROLL AB 1.  Total Medicare Enrollment:  
 # Total, Original Medicare, and Medicare Advantage 
 # and Other Health Plan Enrollment, Yearly Trend
@@ -220,7 +200,12 @@ medicare_enrollment_averages <- "https://docs.google.com/spreadsheets/d/1p52ijKI
 
 mdcr_enroll_avgs <- googlesheets4::read_sheet(ss = medicare_enrollment_averages)
 
-mdcr_enroll_avgs
+mdcr_enroll_avgs <- mdcr_enroll_avgs |> 
+  tidyr::pivot_longer(!area_of_residence,
+    names_to = "year", 
+    values_to = "enrollment_average") |> 
+  dplyr::mutate(year = as.integer(year), 
+                .before = area_of_residence)
 
 readr::write_rds(mdcr_enroll_avgs, 
                  "data/mdcr_enroll_avgs.rds", 
