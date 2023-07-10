@@ -1,11 +1,15 @@
 ---
 output: github_document
+editor_options: 
+  markdown: 
+    wrap: 72
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
+  eval = FALSE,
   collapse  = FALSE,
   echo      = TRUE,
   message   = FALSE, 
@@ -17,311 +21,205 @@ knitr::opts_chunk$set(
   fig.path  = "man/figures/README-"
 )
 options(scipen = 999)
-
-change_abs <- function(df, col, by) {
-
-  df |> dplyr::mutate(
-    "{{ col }}_chg" := {{ col }} - dplyr::lag({{ col }}, order_by = {{ by }}),
-    .after = {{ col }})
-}
-
-change_pct <- function(df, col, col_abs, by) {
-
-  df |> dplyr::mutate(
-    "{{ col }}_pct_chg" := {{ col_abs }} / dplyr::lag({{ col }}, order_by = {{ by }}),
-    .after = {{ col_abs }})
-}
-
-library(timetk)
-library(ggplot2)
-library(plotly)
-library(lubridate)
+#library(timetk)
+#library(ggplot2)
+#library(plotly)
+#library(lubridate)
 ```
 
-# `{medicare_statistics}`
+```{r rds_files, include = FALSE}
+mdcr_enroll_ab_1 <- readr::read_rds(here::here("data", "mdcr_enroll_ab_1.rds"))
+mdcr_enroll_ab_2 <- readr::read_rds(here::here("data", "mdcr_enroll_ab_2.rds"))
+mdcr_enroll_ab_3 <- readr::read_rds(here::here("data", "mdcr_enroll_ab_3.rds"))
+mdcr_enroll_ab_4 <- readr::read_rds(here::here("data", "mdcr_enroll_ab_4.rds"))
+mdcr_enroll_ab_5 <- readr::read_rds(here::here("data", "mdcr_enroll_ab_5.rds"))
+mdcr_enroll_ab_6 <- readr::read_rds(here::here("data", "mdcr_enroll_ab_6.rds"))
+mdcr_enroll_ab_7 <- readr::read_rds(here::here("data", "mdcr_enroll_ab_7.rds"))
+mdcr_enroll_ab_8 <- readr::read_rds(here::here("data", "mdcr_enroll_ab_8.rds"))
 
-<!-- badges: start -->
-<!-- badges: end -->
+# mdcr_enroll_avgs <- readr::read_rds(here::here("data", "mdcr_enroll_avgs.rds"))
+
+mdcr_enroll_ab_33 <- readr::read_rds(here::here("data", "mdcr_enroll_ab_33.rds"))
+mdcr_enroll_ab_34 <- readr::read_rds(here::here("data", "mdcr_enroll_ab_34.rds"))
+mdcr_enroll_ab_35 <- readr::read_rds(here::here("data", "mdcr_enroll_ab_35.rds"))
+mdcr_enroll_ab_36 <- readr::read_rds(here::here("data", "mdcr_enroll_ab_36.rds"))
+mdcr_enroll_ab_37 <- readr::read_rds(here::here("data", "mdcr_enroll_ab_37.rds"))
+
+# mdcr_enroll_ab_38 <- readr::read_rds(here::here("data", "mdcr_enroll_ab_38.rds"))
+# mdcr_enroll_ab_39 <- readr::read_rds(here::here("data", "mdcr_enroll_ab_39.rds"))
+```
+
+# CMS Program Statistics
+
+The CMS Program Statistics (CPS) includes high-level summary reports focused on Medicare populations, use, and payment, as well as counts for Medicare-certified institutional and non-institutional providers.
 
 ## Medicare Enrollment
 
-```{r gs_1, echo=FALSE}
-medicare_enrollment <- "https://docs.google.com/spreadsheets/d/11r-Lt-Q3eXRx-wGLxaMF7ymUhZOjsKFSnZDmHp0UWkc/edit#gid=310095942"
+The Medicare Enrollment reports contain trend, demographic, and state tables showing total Medicare enrollment, Original Medicare enrollment, Medicare Advantage and Other Health Plan enrollment, newly-enrolled beneficiaries, deaths, Medicare-Medicaid Enrollment, and Medicare Part D enrollment.
+
+### Medicare Total Enrollment
+
+Information on all Medicare enrollees by geography, type of coverage, type of entitlement, and demographic characteristics.
+
+```{r eval=FALSE}
+mdcr_enroll_ab_1 |> 
+  dplyr::select(year, 
+                original_pct, 
+                ma_other_pct) |> 
+  tidyr::pivot_longer(!year, 
+                      names_to = "measure", 
+                      values_to = "data") |> 
+  dplyr::group_by(year) |> 
+  dplyr::summarise(list_data = list(data)) |> 
+  gt::gt() |> 
+  gtExtras::gt_plt_bar_stack(column = list_data,
+                             labels = c("Original ", 
+                                        " Advantage"),
+                             palette = c("#ff4343", "#0a1c2b"),
+                             fmt_fn = scales::label_percent(accuracy = 0.1)) |> 
+  gtExtras::gt_theme_538()
 ```
 
+<br>
 
-Total Medicare Enrollment, 2008-2021
+```{r eval=FALSE}
+mdcr_enroll_ab_1 |> 
+  dplyr::select(year, 
+                total_pct_chg,
+                original_pct_chg, 
+                ma_other_pct_chg) |> 
+  provider:::gt_prov(divider = c("year", 
+                                 "ma_other_pct_chg"),
+                     pctchg = c("total_pct_chg", 
+                                "original_pct_chg", 
+                                "ma_other_pct_chg")) |>
+  gt::tab_spanner(label = "YEAR-OVER-YEAR CHANGE (%)",
+                  columns = c(total_pct_chg,
+                              original_pct_chg, 
+                              ma_other_pct_chg)) |> 
+  gt::cols_label(total_pct_chg = "Total",
+                 original_pct_chg = "Original", 
+                 ma_other_pct_chg = "Advantage")
+```
 
-```{r mdcr_enroll_ab_1}
-mdcr_enroll_ab_1 <- googlesheets4::read_sheet(
-  ss = medicare_enrollment, 
-  sheet = "mdcr_enroll_ab_1")
+<br>
 
-mdcr_enroll_ab_1 <- mdcr_enroll_ab_1 |> 
+```{r eval=FALSE}
+mdcr_enroll_ab_1 |> 
   dplyr::select(year,
-                total = enroll_tot,
-                original = enroll_orig,
-                ma_other = enroll_ma_oth) |> 
-  change_abs(total, year) |> 
-  change_abs(original, year) |> 
-  change_abs(ma_other, year) |> 
-  change_pct(total, total_chg, year) |> 
-  change_pct(original, original_chg, year) |> 
-  change_pct(ma_other, ma_other_chg, year) |> 
-  dplyr::mutate(original_pct = original / total, .after = original) |> 
-  dplyr::mutate(ma_other_pct = ma_other / total, .after = ma_other)
-```
-
-<br>
-
-```{r plot1}
-mdcr_enroll_ab_1 |> dplyr::select(year, total, original, ma_other) |> 
-  plot_time_series(year, 
-                   total,
-                   .interactive = F,  
-                   .title = "Total Medicare Enrollment, 2008-2021",
-                   .y_lab = "Enrollees",
-                   .color_lab = "Month") +
-  scale_y_continuous(labels = scales::comma_format())
+                total,
+                original,
+                ma_other,
+                total_chg,
+                original_chg, 
+                ma_other_chg) |> 
+  dplyr::summarise(n = dplyr::n(),
+                   avg_total = mean(total),
+                   avg_original = mean(original),
+                   avg_ma_other = mean(ma_other),
+                   tot_chg_sum = sum(total_chg, na.rm = TRUE),
+                   avg_tot_chg = tot_chg_sum / n,
+                   orig_chg_sum = sum(original_chg, na.rm = TRUE),
+                   avg_orig_chg = orig_chg_sum / n,
+                   ma_chg_sum = sum(ma_other_chg, na.rm = TRUE),
+                   avg_ma_chg = ma_chg_sum / n) |> 
+  dplyr::select(!c(n, dplyr::contains("sum"))) |> 
+  pct(avg_original, avg_total) |> 
+  pct(avg_ma_other, avg_total)
 ```
 <br>
 
-```{r plot2}
-mdcr_enroll_ab_1 |> 
-  dplyr::select(year, dplyr::ends_with("chg") & !c(dplyr::contains("pct"))) |> 
-  dplyr::filter(year != 2008) |> 
-  plot_time_series(year, 
-                   original_chg, 
-                   #.color_var = month(date, label = TRUE),
-                   .interactive = FALSE,  
-                   .title = "Original Medicare Enrollment Change, 2008-2021",
-                   .y_lab = "Enrollees",
-                   .color_lab = "Month") +
-  scale_y_continuous(labels = scales::label_number(style_positive = "plus", 
-                                                   style_negative = "minus", 
-                                                   #suffix = "K",
-                                                   #scale = 1 / 1e5, 
-                                                   big.mark = ","))
-```
-
-<br>
-
-```{r plot3}
-mdcr_enroll_ab_1 |> 
-  dplyr::select(year, dplyr::ends_with("chg") & !c(dplyr::contains("pct"))) |> 
-  dplyr::filter(year != 2008) |> 
-  plot_time_series(year, 
-                   ma_other_chg, 
-                   #.color_var = month(date, label = TRUE),
-                   .interactive = FALSE,  
-                   .title = "Medicare Advantage Enrollment Change, 2008-2021",
-                   .y_lab = "Enrollees",
-                   .color_lab = "Month") +
-  scale_y_continuous(labels = scales::label_number(style_positive = "plus", 
-                                                   style_negative = "minus", 
-                                                   #suffix = "K",
-                                                   #scale = 1 / 1e5, 
-                                                   big.mark = ","))
-```
-
-
-```{r}
-mdcr_enroll_ab_1 |> dplyr::select(year, dplyr::contains("pct_chg"))
-```
-
-Total (Original, and Medicare Advantage and Other Health Plan Enrollment) and Resident Population by Area of Residence, 2013-2021
+Total Enrollment and Population by Area of Residence, 2013-2021
 
 ```{r mdcr_enroll_ab_2}
-mdcr_enroll_ab_2 <- googlesheets4::read_sheet(
-  ss = medicare_enrollment, 
-  sheet = "mdcr_enroll_ab_2")
-
-mdcr_enroll_ab_2
-```
-
-```{r}
 mdcr_enroll_ab_2 |> 
-  dplyr::select(year,
-                area_of_residence, 
-                population,
-                total = enroll_tot,
-                original = enroll_orig,
-                ma_other = enroll_ma_oth,
-                metropolitan = enroll_metro,
-                micropolitan = enroll_micro,
-                non_cbsa = enroll_non_cbsa)
+  dplyr::filter(area_of_residence == "United States") |> 
+  dplyr::select(year, total_pct)
 ```
-
-
 
 Part A and/or Part B Total, Aged, and Disabled Enrollees, 2008-2021
 
 ```{r mdcr_enroll_ab_3}
-mdcr_enroll_ab_3 <- googlesheets4::read_sheet(
-  ss = medicare_enrollment, 
-  sheet = "mdcr_enroll_ab_3")
-
-mdcr_enroll_ab_3 |> 
-  janitor::clean_names()
+mdcr_enroll_ab_3
 ```
 
 Part A and/or Part B Enrollees by Age Group, 2008-2021
 
 ```{r mdcr_enroll_ab_4}
-mdcr_enroll_ab_4 <- googlesheets4::read_sheet(
-  ss = medicare_enrollment, 
-  sheet = "mdcr_enroll_ab_4")
-
 mdcr_enroll_ab_4
 ```
-
-```{r}
-mdcr_enroll_ab_4 |> 
-  dplyr::select(year, total, dplyr::contains("tot_")) |> 
-  dplyr::mutate(pct_lt_18 = janitor::round_half_up(tot_lt_18 / total, digits = 10), .after = tot_lt_18) |> 
-  dplyr::mutate(pct_18_24 = janitor::round_half_up(tot_18_24 / total, digits = 5), .after = tot_18_24) |> 
-  dplyr::mutate(pct_25_34 = janitor::round_half_up(tot_25_34 / total, digits = 5), .after = tot_25_34) |> 
-  dplyr::mutate(pct_35_44 = janitor::round_half_up(tot_35_44 / total, digits = 5), .after = tot_35_44) |> 
-  dplyr::mutate(pct_45_54 = janitor::round_half_up(tot_45_54 / total, digits = 5), .after = tot_45_54) |> 
-  dplyr::mutate(pct_55_64 = janitor::round_half_up(tot_55_64 / total, digits = 5), .after = tot_55_64) |> 
-  dplyr::mutate(pct_65_74 = janitor::round_half_up(tot_65_74 / total, digits = 5), .after = tot_65_74) |> 
-  dplyr::mutate(pct_75_84 = janitor::round_half_up(tot_75_84 / total, digits = 5), .after = tot_75_84) |> 
-  dplyr::mutate(pct_85_94 = janitor::round_half_up(tot_85_94 / total, digits = 5), .after = tot_85_94) |> 
-  dplyr::mutate(pct_95_gt = janitor::round_half_up(tot_95_gt / total, digits = 5), .after = tot_95_gt) |> 
-  dplyr::select(year, dplyr::contains("pct_"))
-```
-
 
 Part A and/or Part B Enrollees by Demographics, 2013-2021
 
 ```{r mdcr_enroll_ab_5}
-mdcr_enroll_ab_5 <- googlesheets4::read_sheet(
-  ss = medicare_enrollment, 
-  sheet = "mdcr_enroll_ab_5")
-
-mdcr_enroll_ab_5 |> 
-  janitor::clean_names()
+mdcr_enroll_ab_5
 ```
 
-
-Part A and/or Part B Enrollees by Type of Entitlement and Demographics, 2013-2021
+Part A and/or Part B Enrollees by Type of Entitlement and Demographics,
+2013-2021
 
 ```{r mdcr_enroll_ab_6}
-mdcr_enroll_ab_6 <- googlesheets4::read_sheet(
-  ss = medicare_enrollment, 
-  sheet = "mdcr_enroll_ab_6")
-
 mdcr_enroll_ab_6
 ```
 
-
-Part A and/or Part B Total, Aged, and Disabled Enrollees by Area of Residence, 2013-2021
+Part A and/or Part B Total, Aged, and Disabled Enrollees by Area of
+Residence, 2013-2021
 
 ```{r mdcr_enroll_ab_7}
-mdcr_enroll_ab_7 <- googlesheets4::read_sheet(
-  ss = medicare_enrollment, 
-  sheet = "mdcr_enroll_ab_7")
-
-mdcr_enroll_ab_7 |> 
-  janitor::clean_names()
+mdcr_enroll_ab_7
 ```
 
-
-Part A and/or Part B Enrollees, by Type of Entitlement and Area of Residence, 2013-2021
+Part A and/or Part B Enrollees, by Type of Entitlement and Area of
+Residence, 2013-2021
 
 ```{r mdcr_enroll_ab_8}
-mdcr_enroll_ab_8 <- googlesheets4::read_sheet(
-  ss = medicare_enrollment, 
-  sheet = "mdcr_enroll_ab_8")
-
 mdcr_enroll_ab_8
 ```
 
 ## Medicare Deaths
 
-```{r gs_2, echo=FALSE}
-medicare_deaths <- "https://docs.google.com/spreadsheets/d/1yQ9eJe4f7KoOK4fY2_7L-sux2bJ92AO4XrDoYOr6nSY/edit#gid=264964884"
-```
-
+Information on all Medicare beneficiary deaths, by type of entitlement, health care delivery, demographic characteristics, and geography.
 
 Total Beneficiaries by Month of Death, 2008-2021
 
 ```{r mdcr_enroll_ab_33}
-mdcr_enroll_ab_33 <- googlesheets4::read_sheet(
-  ss = medicare_deaths, 
-  sheet = "mdcr_enroll_ab_33")
-
-mdcr_enroll_ab_33 |> 
-  dplyr::mutate(valid_total = january + february + march + april + may + june + july + august + september + october + november + december, 
-                .after = total)
+mdcr_enroll_ab_33
 ```
-
 
 Total Beneficiaries by Demographics, 2013-2021
 
 ```{r mdcr_enroll_ab_34}
-mdcr_enroll_ab_34 <- googlesheets4::read_sheet(
-  ss = medicare_deaths, 
-  sheet = "mdcr_enroll_ab_34")
-
 mdcr_enroll_ab_34
 ```
-
 
 Total Beneficiaries by Area of Residence, 2013-2021
 
 ```{r mdcr_enroll_ab_35}
-mdcr_enroll_ab_35 <- googlesheets4::read_sheet(
-  ss = medicare_deaths, 
-  sheet = "mdcr_enroll_ab_35")
-
 mdcr_enroll_ab_35
 ```
-
 
 Original Medicare Beneficiaries by Month of Death, 2008-2021
 
 ```{r mdcr_enroll_ab_36}
-mdcr_enroll_ab_36 <- googlesheets4::read_sheet(
-  ss = medicare_deaths, 
-  sheet = "mdcr_enroll_ab_36")
-
-mdcr_enroll_ab_36 |> 
-  dplyr::mutate(valid_total = january + february + march + april + may + june + july + august + september + october + november + december, 
-                .after = total)
+mdcr_enroll_ab_36
 ```
-
 
 Original Medicare Beneficiaries by Area of Residence, 2013-2021
 
 ```{r mdcr_enroll_ab_37}
-mdcr_enroll_ab_37 <- googlesheets4::read_sheet(
-  ss = medicare_deaths, 
-  sheet = "mdcr_enroll_ab_37")
-
 mdcr_enroll_ab_37
 ```
 
-
-Medicare Advantage and Other Health Plan Beneficiaries by Month of Death, 2008-2021
+Medicare Advantage and Other Health Plan Beneficiaries by Month of
+Death, 2008-2021
 
 ```{r mdcr_enroll_ab_38}
-mdcr_enroll_ab_38 <- googlesheets4::read_sheet(
-  ss = medicare_deaths, 
-  sheet = "mdcr_enroll_ab_38")
-
-mdcr_enroll_ab_38 |> 
-  dplyr::mutate(valid_total = january + february + march + april + may + june + july + august + september + october + november + december, 
-                .after = total)
+#mdcr_enroll_ab_38
 ```
 
-
-Medicare Advantage and Other Health Plan Beneficiaries by Area of Residence, 2013-2021
+Medicare Advantage and Other Health Plan Beneficiaries by Area of
+Residence, 2013-2021
 
 ```{r mdcr_enroll_ab_39}
-mdcr_enroll_ab_39 <- googlesheets4::read_sheet(
-  ss = medicare_deaths, 
-  sheet = "mdcr_enroll_ab_39")
-
-mdcr_enroll_ab_39
+#mdcr_enroll_ab_39
 ```
