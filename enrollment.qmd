@@ -1,0 +1,430 @@
+---
+title: "Medicare Enrollment"
+author: "Andrew Burce"
+format: 
+  html:
+    theme: zephyr
+    toc: true
+    number-sections: false
+date: last-modified
+code-fold: true
+code-overflow: scroll
+---
+
+The Medicare Enrollment reports contain trend, demographic, and state tables showing total Medicare enrollment, Original Medicare enrollment, Medicare Advantage and Other Health Plan enrollment, newly-enrolled beneficiaries, deaths, Medicare-Medicaid Enrollment, and Medicare Part D enrollment. These include data on all Medicare enrollees by geography, type of coverage, type of entitlement, and demographic characteristics.
+
+```{r setup}
+#| echo: false
+#| eval: true
+source(here::here("R", "utils.R"))
+source(here::here("R", "enrollment.R"))
+```
+
+
+::: {.callout-note appearance="simple" collapse="true"}
+
+## Original Medicare Enrollees
+
+Medicare beneficiaries enrolled in the traditional health care system (or Fee-for-Service).
+
+:::
+
+
+::: {.callout-note appearance="simple" collapse="true"}
+
+## Medicare Advantage and Other Health Plan Enrollees
+
+Medicare beneficiaries enrolled in health plans that are offered by private companies approved by Medicare to provide health care coverage offered at a uniform premium and uniform level of cost-sharing to all Medicare beneficiaries residing in the service area (or segment of the service area). Each type of plan has special rules and exceptions.
+
+:::
+
+::: {.panel-tabset}
+
+## Yearly Enrollment
+
+```{r mdcr_enroll_ab_1}
+mdcr_enroll_ab_1 |> 
+  dplyr::select(Year = year, 
+                Total = total, 
+                Original = original, 
+                Advantage = ma_other) |> 
+  gt::gt(rowname_col = "Year") |> 
+  gt::sub_missing() |> 
+  gt::fmt_number(columns = c("Total", "Original", "Advantage"),
+                 suffixing = TRUE,
+                 decimals = 2) |>
+  gt::opt_stylize(style = 1)
+```
+
+## Absolute Change
+
+```{r mdcr_enroll_ab_1_2}
+mdcr_enroll_ab_1 |> 
+  dplyr::select(Year = year, 
+                Total = total_chg, 
+                Original = original_chg, 
+                Advantage = ma_other_chg) |> 
+  gt::gt(rowname_col = "Year") |> 
+  gt::sub_missing() |> 
+  gt::fmt_number(columns = c("Total", "Original", "Advantage"),
+                 force_sign = TRUE,
+                 decimals = 2,
+                 suffixing = TRUE) |>
+  gt::opt_stylize(style = 1)
+```
+
+## Relative Change
+
+```{r mdcr_enroll_ab_1_3}
+mdcr_enroll_ab_1 |> 
+  dplyr::select(Year = year, 
+                Total = total_pct_chg, 
+                Original = original_pct_chg, 
+                Advantage = ma_other_pct_chg) |> 
+  gt::gt(rowname_col = "Year") |> 
+  gt::sub_missing() |> 
+  gt::fmt_percent(columns = c("Total", "Original", "Advantage"),
+                  force_sign = TRUE) |> 
+  gt::opt_stylize(style = 1)
+```
+
+:::
+
+```{r}
+#| label: fig-origmapct
+#| fig-cap: "Breakdown of percentage of Medicare types from 2008 to 2021"
+#| warning: false
+#| echo: false
+#| eval: false
+
+mdcr_enroll_ab_1 |> 
+  dplyr::select(Year = year, 
+                #total, 
+                Original = original, 
+                "Medicare Advantage" = ma_other) |> 
+  tidyr::pivot_longer(!Year, 
+                      names_to = "Type", 
+                      values_to = "Enrollees") |> 
+  ggplot2::ggplot(ggplot2::aes(Year, 
+                               Enrollees, 
+                               group = Type, 
+                               fill = Type)) +
+  ggchicklet::geom_chicklet(width = 0.75) +
+  ggplot2::scale_fill_manual(
+    name = NULL,
+    values = c(
+      "Medicare Advantage" = "#ae4544",
+      "Economy" = "#d8cb98",
+      "Climate Change" = "#a4ad6f",
+      "Original" = "#cc7c3a",
+      "Healthcare" = "#436f82",
+      "Foreign Policy" = "#7c5981",
+      "Other" = "#cccccc"
+    )
+    #breaks = setdiff(unique(debates2019$topic), "Other")
+  ) +
+  ggplot2::guides(
+    fill = ggplot2::guide_legend(nrow = 1)
+  ) +
+  ggplot2::coord_flip() +
+  ggplot2::labs(
+    x = NULL, 
+    y = NULL, 
+    fill = NULL
+  ) +
+  hrbrthemes::theme_ipsum_rc(grid="X") +
+  ggplot2::theme(axis.text.x = ggplot2::element_text(
+    color = "gray60", 
+    size = 10)) +
+  ggplot2::theme(legend.position = "top")
+```
+
+```{r}
+#| warning: false
+#| echo: false
+#| eval: false
+mdcr_enroll_ab_1 |> 
+  dplyr::select(year, 
+                original_pct, 
+                ma_other_pct) |> 
+  tidyr::pivot_longer(!year, 
+                      names_to = "measure", 
+                      values_to = "data") |> 
+  dplyr::group_by(year) |> 
+  dplyr::summarise(list_data = list(data)) |> 
+  gt::gt() |> 
+  gtExtras::gt_plt_bar_stack(column = list_data,
+                             labels = c("Original ", 
+                                        " Advantage"),
+                             palette = c("#ff4343", "#0a1c2b"),
+                             fmt_fn = scales::label_percent(accuracy = 0.1)) |> 
+  gtExtras::gt_theme_538()
+```
+
+```{r}
+#| warning: false
+#| echo: false
+#| eval: false
+mdcr_enroll_ab_1 |> 
+  dplyr::select(year, 
+                total_pct_chg,
+                original_pct_chg, 
+                ma_other_pct_chg) |> 
+  provider:::gt_prov(divider = c("year", 
+                                 "ma_other_pct_chg"),
+                     pctchg = c("total_pct_chg", 
+                                "original_pct_chg", 
+                                "ma_other_pct_chg")) |>
+  gt::tab_spanner(label = "YEAR-OVER-YEAR CHANGE (%)",
+                  columns = c(total_pct_chg,
+                              original_pct_chg, 
+                              ma_other_pct_chg)) |> 
+  gt::cols_label(total_pct_chg = "Total",
+                 original_pct_chg = "Original", 
+                 ma_other_pct_chg = "Advantage")
+```
+
+<br>
+
+```{r}
+mdcr_enroll_ab_1 |> 
+  dplyr::select(year,
+                total,
+                original,
+                ma_other,
+                total_chg,
+                original_chg, 
+                ma_other_chg) |> 
+  dplyr::summarise(n = dplyr::n(),
+                   avg_total = mean(total),
+                   avg_original = mean(original),
+                   avg_ma_other = mean(ma_other),
+                   tot_chg_sum = sum(total_chg, na.rm = TRUE),
+                   avg_tot_chg = tot_chg_sum / n,
+                   orig_chg_sum = sum(original_chg, na.rm = TRUE),
+                   avg_orig_chg = orig_chg_sum / n,
+                   ma_chg_sum = sum(ma_other_chg, na.rm = TRUE),
+                   avg_ma_chg = ma_chg_sum / n) |> 
+  dplyr::select(!c(n, dplyr::contains("sum"))) |> 
+  pct(avg_original, avg_total) |> 
+  pct(avg_ma_other, avg_total) |> 
+  dplyr::glimpse()
+```
+
+<br>
+
+## Enrollment by Area of Residence, 2013-2021
+
+::: {.callout-note appearance="simple" collapse="true"}
+
+## Metropolitan Statistical Area
+
+A Core Based Statistical Area associated with at least one urbanized area that has a population of at least 50,000. The Metropolitan Statistical Area comprises the central county or counties containing the core, plus adjacent outlying counties having a high degree of social and economic integration with the central county or counties as measured through commuting.
+
+:::
+
+
+::: {.callout-note appearance="simple" collapse="true"}
+
+## Micropolitan Statistical Area
+
+A Core Statistical Area associated with at least one urban cluster that has a population of at least 10,000, but less than 50,000. The Micropolitan Statistical Area comprises the central county or counties containing the core, plus adjacent outlying counties having a high degree of social and economic integration with the central county or counties as measured through commuting.
+
+:::
+
+
+::: {.callout-note appearance="simple" collapse="true"}
+
+## Non-Core-Based Statistical Area
+
+All remaining counties, often labeled “noncore” counties because they are not part of “core-based” metropolitan or micropolitan areas.
+
+:::
+
+```{r mdcr_enroll_ab_2}
+mdcr_enroll_ab_2
+```
+
+<br>
+
+### Percentage of Population Enrolled in Medicare
+
+```{r}
+#| column: page
+mdcr_enroll_ab_2 |> 
+  dplyr::select(year,
+                residence = area_of_residence,
+                Total = total_pct) |> 
+  tidyr::pivot_wider(names_from = "year", 
+                     values_from = "Total") |> 
+  gt::gt(rowname_col = "residence") |> 
+  gt::tab_header(
+    title = gt::md("**Medicare Enrollment by Area of Residence**"),
+    subtitle = gt::md("**Percentage of Population Enrolled in Medicare, 2013 - 2021**")
+  ) |> 
+  gt::cols_align(align = "right", 
+                 columns = residence) |> 
+  gt::cols_align_decimal() |> 
+  # gt::opt_table_font(
+  #   font = c(
+  #     gt::google_font(name = "Karla"),
+  #     gt::default_fonts())) |>
+  gt::sub_missing() |>
+  gt::fmt_percent(columns = 2:10,
+                  decimals = 1,
+                  drop_trailing_zeros = TRUE,
+                  drop_trailing_dec_mark = TRUE) |>
+  gt::data_color(direction = "row",
+                 method = "numeric",
+                 palette = "Blues",
+                 reverse = TRUE) |>
+  gt::tab_source_note(
+    source_note = gt::md(
+    "**Source**: [CMS Program Statistics - Medicare Total Enrollment](https://data.cms.gov/summary-statistics-on-beneficiary-enrollment/medicare-and-medicaid-reports/cms-program-statistics-medicare-total-enrollment).")) |> 
+  gt::opt_stylize(style = 1, add_row_striping = FALSE)
+```
+
+<br>
+
+### Percentage Enrolled in Original Medicare or Medicare Advantage
+
+```{r}
+#| column: page
+#| echo: false
+#| eval: false
+mdcr_enroll_ab_2 |> 
+  dplyr::select(year,
+                residence = area_of_residence,
+                ORIG = original_pct,
+                MA = ma_other_pct) |> 
+  tidyr::pivot_longer(cols = ORIG:MA, 
+                      names_to = "Type", 
+                      values_to = "Percentage") |> 
+  tidyr::unite("year_type", c(year, Type)) |> 
+  tidyr::pivot_wider(names_from = "year_type", 
+                     values_from = "Percentage") |> 
+  gt::gt(rowname_col = "residence") |> 
+  gt::tab_spanner_delim(delim = "_") |>
+  gt::cols_align(align = "right", 
+                 columns = residence) |> 
+  gt::cols_align_decimal() |> 
+  gt::opt_table_font(
+    font = c(
+      gt::google_font(name = "Karla"),
+      gt::default_fonts())) |>
+  gt::sub_missing() |>
+  gt::fmt_percent(columns = 2:19,
+                  decimals = 1,
+                  drop_trailing_zeros = TRUE,
+                  drop_trailing_dec_mark = TRUE) |>
+  gt::data_color(direction = "row",
+                 method = "numeric",
+                 palette = "Blues") |>
+  gt::opt_vertical_padding(scale = 1.65) |>
+  gt::opt_stylize(style = 1, add_row_striping = FALSE)
+```
+
+```{r}
+mdcr_enroll_ab_2 |> 
+  dplyr::select(year,
+                residence = area_of_residence,
+                Original = original_pct,
+                Advantage = ma_other_pct) |> 
+  tidyr::pivot_longer(cols = Original:Advantage, 
+                      names_to = "Type", 
+                      values_to = "Percentage") |> 
+  tidyr::pivot_wider(names_from = "year",
+                     values_from = "Percentage") |>
+  gt::gt(rowname_col = "Type", 
+         groupname_col = "residence") |> 
+  gt::opt_stylize(style = 1, 
+                  add_row_striping = FALSE) |>
+  gt::tab_header(
+    title = gt::md("**Medicare Enrollment by Area of Residence**"),
+    subtitle = gt::md("**Percentage of Medicare Beneficiaries Enrolled in *Original Medicare* or *Medicare Advantage*, 2013 - 2021**")
+  ) |> 
+   gt::tab_options(
+     column_labels.vlines.color = "blue",
+    column_labels.font.weight = "bold",
+    stub.font.weight = "bold",
+    stub.font.size = gt::pct(80),
+    row_group.font.weight = "bold",
+    row_group.font.size = gt::pct(70),
+    row_group.as_column = TRUE) |>
+  gt::cols_align(align = "right", 
+                 columns = c("residence", "Type")) |> 
+  gt::cols_align(align = "center", 
+                 columns = 3:11) |> 
+  gt::cols_align_decimal() |> 
+  # gt::opt_table_font(
+  #   font = c(
+  #     gt::google_font(name = "Karla"),
+  #     gt::default_fonts())) |>
+  gt::sub_missing() |>
+  gt::fmt_percent(columns = 3:11,
+                  decimals = 1,
+                  drop_trailing_zeros = TRUE,
+                  drop_trailing_dec_mark = TRUE) |>
+  gt::data_color(direction = "row",
+                 method = "numeric",
+                 palette = "Blues") |>
+  # gt::tab_style(
+  #   style = gt::cell_fill(color = "lightblue"),
+  #   locations = gt::cells_row_groups()) |> 
+  gt::opt_vertical_padding(scale = 0.65) |>
+  gt::tab_source_note(
+    source_note = gt::md(
+    "**Source**: [CMS Program Statistics - Medicare Total Enrollment](https://data.cms.gov/summary-statistics-on-beneficiary-enrollment/medicare-and-medicaid-reports/cms-program-statistics-medicare-total-enrollment)."))
+```
+
+<br>
+
+
+
+```{r}
+mdcr_enroll_ab_2 |> 
+  dplyr::select(year,
+                residence = area_of_residence,
+                Metro = metro_pct,
+                Micro = micro_pct,
+                'Non-CBSA' = non_cbsa_pct
+                # Metropolitan = metro_pct,
+                # Micropolitan = micro_pct,
+                # "Non-CBSA" = non_cbsa_pct
+                ) |> 
+  tidyr::pivot_longer(cols = c("Metro", "Micro", "Non-CBSA"), 
+                      names_to = "Type", 
+                      values_to = "Percentage") |> 
+  tidyr::pivot_wider(names_from = "year",
+                     values_from = "Percentage") |>
+  gt::gt(rowname_col = "Type", 
+         groupname_col = "residence") |> 
+  gt::opt_stylize(style = 1, color = "red") |> 
+  gt::tab_options(
+    column_labels.font.weight = "bold",
+    stub.font.weight = "bold",
+    stub.font.size = gt::pct(80),
+    row_group.font.weight = "bold",
+    row_group.font.size = gt::pct(70),
+    row_group.as_column = TRUE) |>
+  gt::data_color(direction = "row",
+                 method = "numeric",
+                 palette = "ggsci::red_material") |>
+  gt::cols_align_decimal() |> 
+  gt::sub_zero(zero_text = "< 0%") |>
+  gt::fmt_percent(columns = 3:11,
+                  decimals = 1,
+                  drop_trailing_zeros = TRUE,
+                  drop_trailing_dec_mark = TRUE)
+```
+
+
+
+<br>
+
+
+### Enrollment Averages
+
+```{r mdcr_enroll_avgs}
+mdcr_enroll_avgs
+```

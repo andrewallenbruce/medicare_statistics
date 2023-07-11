@@ -1,0 +1,172 @@
+---
+title: "Medicare Parts A & B"
+author: "Andrew Bruce"
+format: 
+  html:
+    theme: zephyr
+    toc: true
+    number-sections: false
+date: last-modified
+code-fold: true
+code-overflow: scroll
+---
+
+```{r setup}
+#| echo: false
+#| eval: true
+source(here::here("R", "utils.R"))
+source(here::here("R", "partsab.R"))
+```
+
+Part A and/or Part B Total, Aged, and Disabled Enrollees, 2008-2021
+
+::: {.callout-note appearance="simple" collapse="true"}
+
+## Medicare Part A
+
+An insurance program providing basic protection against the costs of hospital and related post-hospital services for individuals who: are age 65 or over and are eligible for retirement benefits under the Social Security or the RRB system; are under age 65 who have been entitled for at least 24 months to disability benefits under the Social Security or RRB system; are medically determined to have ESRD and are covered by the Social Security or RRB system; beginning in July 2001, are persons with Amyotrophic Lateral Sclerosis (Lou Gehrig’s Disease) who are allowed to waive the 24-month waiting period; or beginning March 30, 2010, are in the vicinity of Libby, Montana who are diagnosed with an asbestos-related condition. Part A helps cover inpatient hospital care, skilled nursing facility (SNF) care, hospice care, and some home health care.
+
+:::
+
+
+::: {.callout-note appearance="simple" collapse="true"}
+
+## Medicare Part B
+
+A voluntary insurance program that provides insurance benefits for physicians’ services, outpatient care, ambulatory services, medical supplies and services, durable medical equipment, some home health care services, and preventive services to aged and disabled individuals who elect to enroll under the program in accordance with the provisions of Title XVIII of the Social Security Act. The SMI program is financed by enrollee premium payments and contributions from funds appropriated by the Federal Government. A separate account in the SMI trust fund now also accounts for the Part D drug benefit.
+
+:::
+
+```{r mdcr_enroll_ab_3}
+mdcr_enroll_ab_3
+```
+
+<br>
+
+Part A and/or Part B Enrollees by Age Group, 2008-2021
+
+```{r mdcr_enroll_ab_4}
+age_tot <- mdcr_enroll_ab_4 |> 
+  dplyr::select(year, dplyr::contains("tot_")) |> 
+  tidyr::pivot_longer(!year, names_to = "group", values_to = "total") |> 
+  dplyr::mutate(group = stringr::str_remove(group, "tot_"),
+                group = dplyr::case_match(group, 
+                                          "lt_18" ~ "Under 18",
+                                          "18_24" ~ "18-24",
+                                          "25_34" ~ "25-34",
+                                          "35_44" ~ "35-44",
+                                          "45_54" ~ "45-54",
+                                          "55_64" ~ "55-64",
+                                          "65_74" ~ "65-74",
+                                          "75_84" ~ "75-84",
+                                          "85_94" ~ "85-94",
+                                          "95_gt" ~ "95 and Older"))
+
+age_pct <- mdcr_enroll_ab_4 |> 
+  dplyr::select(year, dplyr::contains("pct")) |> 
+  tidyr::pivot_longer(!year, names_to = "group", values_to = "percentage") |> 
+  dplyr::mutate(group = stringr::str_remove(group, "pct_"),
+                group = dplyr::case_match(group, 
+                                          "lt_18" ~ "Under 18",
+                                          "18_24" ~ "18-24",
+                                          "25_34" ~ "25-34",
+                                          "35_44" ~ "35-44",
+                                          "45_54" ~ "45-54",
+                                          "55_64" ~ "55-64",
+                                          "65_74" ~ "65-74",
+                                          "75_84" ~ "75-84",
+                                          "85_94" ~ "85-94",
+                                          "95_gt" ~ "95 and Older"))
+
+age_groups <- dplyr::left_join(age_tot, 
+                               age_pct, 
+                               by = dplyr::join_by(year, group))
+
+age_groups |> 
+  tidyr::pivot_longer(cols = total:percentage, 
+                      names_to = "type", 
+                      values_to = "value") |> 
+  tidyr::pivot_wider(names_from = "year",
+                     values_from = "value") |>
+  dplyr::filter(type == "total") |> 
+  dplyr::mutate(type = NULL) |> 
+  gt::gt(rowname_col = "group") |> 
+  gt::fmt_number(suffixing = TRUE,
+                  decimals = 0) |> 
+  gt::data_color(direction = "column",
+                 method = "numeric",
+                 palette = "magma",
+                 reverse = F) |> 
+  #gt::opt_stylize(style = 1) |> 
+  gt::tab_options(
+    table_body.hlines.style = "none",
+    column_labels.border.top.color = "black",
+    column_labels.border.bottom.color = "black",
+    table_body.border.bottom.color = "black"
+  )
+```
+
+<br>
+
+Part A and/or Part B Enrollees by Demographics, 2013-2021
+
+```{r mdcr_enroll_ab_5}
+mdcr_enroll_ab_5
+```
+
+<br>
+
+## Part A and/or Part B Enrollees
+
+::: {.callout-note appearance="simple" collapse="true"}
+
+## Aged Enrollees
+
+One of the categories used for classifying Medicare enrollees and Medicaid eligibles. Under Medicare, persons age 65 or over are included in this category if they are: entitled to monthly SSA benefits or payments from the RRB, uninsured for SSA or RRB benefits but transitionally insured for Medicare, or not included in the previously mentioned groups, but based on meeting certain criteria, elect to purchase HI and/or SMI coverage by paying the appropriate monthly premium. Persons age 65 or over identified as having ESRD are included. Under Medicaid, persons age 65 or over are included if, in addition to initially being age 65 or over met certain means (income and resources) criteria or incur medical expenses for health care that when deducted from income qualifies the individual for Medicaid.
+
+:::
+
+
+::: {.callout-note appearance="simple" collapse="true"}
+
+## Disabled Enrollees
+
+One of the categories used for classifying Medicare enrollees and Medicaid eligibles. Disabled persons under age 65 receiving Social Security or RRB disability insurance benefits for 24 months are eligible for Medicare coverage. Persons under age 65 who are diagnosed with ESRD are eligible to receive Medicare coverage without the Social Security disability insurance 24 month requirement. In this online report, ESRD beneficiaries are included with the disabled unless otherwise noted. Under Medicaid, the disabled category refers to low-income individuals of any age who are eligible as persons meeting SSA’s programmatic definition of disability. This includes individuals receiving SSI as well as those whose incomes are too high for SSI, but qualify under separate Medicaid income standards.
+
+:::
+
+::: {.callout-note appearance="simple" collapse="true"}
+
+## End Stage Renal Disease (ESRD) Enrollees
+
+Permanent kidney failure. To survive, the patient must either receive a kidney transplant or periodic kidney dialysis. Individuals with ESRD are eligible for Medicare benefits under a special entitlement.
+
+Individuals who have chronic kidney disease requiring renal dialysis or a kidney transplant are considered to have ESRD. To qualify for Medicare coverage, such individuals must be fully or currently insured under Social Security or the Railroad Retirement System or be the dependent of an insured person. Eligibility for Medicare coverage begins the first day of the fourth month of dialysis treatments; coverage may begin sooner if the patient participates in a self-care dialysis training program provided by a Medicare-approved training facility. Also, coverage may begin on admittance to a Medicare-approved hospital to receive a kidney transplant or to receive dialysis before the transplant if the transplant takes place in that same month or within the following 2 months.
+
+:::
+
+Part A and/or Part B Enrollees by Type of Entitlement and Demographics, 2013-2021
+
+```{r mdcr_enroll_ab_6}
+mdcr_enroll_ab_6
+```
+
+<br>
+
+Part A and/or Part B Total, Aged, and Disabled Enrollees by Area of
+Residence, 2013-2021
+
+```{r mdcr_enroll_ab_7}
+mdcr_enroll_ab_7
+```
+
+<br>
+
+Part A and/or Part B Enrollees, by Type of Entitlement and Area of
+Residence, 2013-2021
+
+```{r mdcr_enroll_ab_8}
+mdcr_enroll_ab_8
+```
+
+<br>

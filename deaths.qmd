@@ -15,14 +15,12 @@ code-overflow: scroll
 #| echo: false
 #| eval: true
 #| message: false
+#| warning: false
 source(here::here("R", "utils.R"))
 source(here::here("R", "deaths.R"))
 library(tidyverse)
 library(scalesextra)
 ```
-
-
-## Medicare Deaths
 
 Information on all Medicare beneficiary deaths, by type of entitlement, health care delivery, demographic characteristics, and geography.
 
@@ -30,6 +28,7 @@ Information on all Medicare beneficiary deaths, by type of entitlement, health c
 
 ```{r}
 #| message: false
+#| collapse: true
 # Total Beneficiary Deaths by Month, 2008-2021
 mon_tot <- mdcr_enroll_ab_33 |> 
   dplyr::mutate(group = "Total", 
@@ -57,6 +56,7 @@ mon_ma
 
 
 ```{r}
+#| message: false
 # ALL Deaths by Month, 2008-2021
 deaths_by_month <- dplyr::full_join(mon_tot, mon_orig) |> 
   dplyr::full_join(mon_ma)
@@ -82,7 +82,6 @@ deaths_by_month_pct <- deaths_by_month |>
 deaths_by_month_pct
 ```
 
-
 ```{r}
 deaths_by_month_n <- deaths_by_month |> 
   dplyr::select(year, 
@@ -107,52 +106,99 @@ deaths_by_month_n |>
   scale_color_manual(name = "", values = c("red","steelblue", "darkgreen")) +
   scale_linetype_manual(name = "", values = c(1, 1, 1))+
   scalesextra::scale_y_pretty() +
-  labs(x = NULL, y = NULL) +
-  theme(legend.position = "bottom")
+  scale_x_date(date_breaks = "1 year", date_labels = "%y") +
+  labs(x = NULL, y = NULL) + 
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.position = "none",
+        legend.key = element_blank())
 ```
 
 <br>
 
 ```{r}
+above <- deaths_by_month_pct |> 
+  dplyr::filter(group == "Total") |> 
+  dplyr::mutate(above_mean = dplyr::if_else(
+    deaths_pct > mean(deaths_pct), TRUE, FALSE)) |> 
+  dplyr::filter(above_mean == TRUE) |> 
+  dplyr::select(-above_mean)
+
 deaths_by_month_pct |>  
   dplyr::filter(group == "Total") |> 
   ggplot2::ggplot(aes(x = date)) +
-  geom_line(aes(y = deaths_pct 
-                #color = group, 
-                #linetype = group
-                ), linewidth = 0.5) +
-  scale_fill_manual(name = "", values = c("red","steelblue", "darkgreen")) +
-  scale_color_manual(name = "", values = c("red","steelblue", "darkgreen")) +
-  scale_linetype_manual(name = "", values = c(1, 1, 1))+
+  geom_line(aes(y = deaths_pct), linewidth = 0.5, color = "darkblue") +
+  #geom_point(data = above, aes(y = deaths_pct , fill = mon), color = "darkred", size = 2.8) +
+  #geom_point(aes(y = deaths_pct, fill = mon), color = "white", size = 2, alpha = 0) +
+  #scale_color_manual(name = "", values = c("red","steelblue", "darkgreen")) +
+  #scale_linetype_manual(name = "", values = c(1, 1, 1))+
   scalesextra::scale_y_pct() +
-  labs(x = NULL, y = NULL) +
-  theme(legend.position = "bottom")
+  scale_x_date(date_breaks = "1 year", date_labels = "%y") +
+  labs(x = NULL, y = NULL) + 
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.position = "none",
+        legend.key = element_blank())
 ```
 
 <br>
 
 ```{r}
 deaths_by_month_n |>  
-  dplyr::filter(group == "Total", year < 2022) |> 
+  dplyr::filter(group == "Total") |> 
   ggplot2::ggplot(aes(x = mon)) +
   geom_point(aes(y = deaths, color = year, fill = year)) +
   geom_line(aes(y = deaths, group = year, color = year), linewidth = 0.5) +
   scalesextra::scale_y_pretty2() +
   labs(x = NULL, y = NULL) + 
-  theme(legend.position = "bottom")
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.position = "none",
+        legend.key = element_blank())
 ```
 
 <br>
 
 ```{r}
+jan_pct <- deaths_by_month_pct |>  
+  dplyr::filter(month == "January", 
+                group == "Total") |> 
+  dplyr::arrange(year) |> 
+  dplyr::slice_head(n = 7)
+
+dec_pct <- deaths_by_month_pct |>  
+  dplyr::filter(month == "December", 
+                group == "Total") |> 
+  dplyr::arrange(dplyr::desc(year)) |> 
+  dplyr::slice_head(n = 7)
+
 deaths_by_month_pct |>  
   dplyr::filter(group == "Total", year < 2022) |> 
   ggplot2::ggplot(aes(x = mon)) +
-  geom_point(aes(y = deaths_pct, color = year, fill = year > 2018, shape = year > 2018), size = 2.5) +
-  geom_line(aes(y = deaths_pct, group = year, color = year, linetype = year > 2018), linewidth = 0.5) +
+  geom_point(aes(y = deaths_pct, color = year, fill = year)) +
+  geom_line(aes(y = deaths_pct, group = year, color = year), linewidth = 0.5) +
+  ggrepel::geom_label_repel(data = jan_pct, aes(y = deaths_pct, label = year),
+                            force_pull = 0.5, 
+                            max.overlaps = 10, 
+                            xlim = c(0, 1), 
+                            ylim = c(0.07, 0.12),
+                            nudge_x = -2,
+                            direction = "y",
+                            label.r = 0,
+                            label.size = 0) +
+  ggrepel::geom_label_repel(data = dec_pct, aes(y = deaths_pct, label = year), 
+                            force_pull = 0.7, 
+                            max.overlaps = 8, 
+                            xlim = c(12, 13), 
+                            ylim = c(0.07, 0.12),
+                            nudge_x = 2,
+                            direction = "y",
+                            label.r = 0,
+                            label.size = 0,
+                            color = "black") +
+  scale_x_discrete(expand = expansion(add = c(0.25, 1.25))) +
   scalesextra::scale_y_pct() +
   labs(x = NULL, y = NULL) + 
-  theme(legend.position = "bottom")
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.position = "none",
+        legend.key = element_blank())
 ```
 
 <br>
@@ -189,6 +235,60 @@ mdcr_enroll_ab_39
 
 Total Beneficiary Deaths Demographics, 2013-2021
 
-```{r mdcr_enroll_ab_34}
-mdcr_enroll_ab_34
+```{r}
+mdcr_enroll_ab_34 |> 
+  dplyr::filter(group == "Total") |> 
+  dplyr::select(year, total, original, ma_other)
+```
+
+<br>
+
+```{r}
+mdcr_enroll_ab_34 |> 
+  dplyr::filter(group == "Age Simple") |> 
+  dplyr::select(year, subgroup, total, original, ma_other)
+```
+
+
+
+<br>
+
+```{r}
+mdcr_enroll_ab_34 |> 
+  dplyr::filter(group == "Age Detailed") |> 
+  dplyr::select(year, subgroup, total, original, ma_other)
+```
+
+
+<br>
+
+```{r}
+mdcr_enroll_ab_34 |> 
+  dplyr::filter(group == "Sex") |> 
+  dplyr::select(year, 
+                subgroup, 
+                total, 
+                original, 
+                ma_other) |> 
+  tidyr::pivot_wider(names_from = subgroup, 
+                     values_from = c(total, original, ma_other)) |> 
+  dplyr::mutate(total = total_Male + total_Female, 
+                .before = total_Male) |> 
+  dplyr::mutate(original = original_Male + original_Female, 
+                .before = original_Male) |> 
+  dplyr::mutate(ma_other = ma_other_Male + ma_other_Female, 
+                .before = ma_other_Male)
+```
+
+
+<br>
+
+```{r}
+mdcr_enroll_ab_34 |> 
+  dplyr::filter(group == "Race") |> 
+  dplyr::select(year, 
+                subgroup, 
+                total, 
+                original, 
+                ma_other)
 ```

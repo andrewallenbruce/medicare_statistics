@@ -1,0 +1,6 @@
+mdcr_enroll_ab_3 <- readr::read_rds(here::here("data", "mdcr_enroll_ab_3.rds"))
+mdcr_enroll_ab_4 <- readr::read_rds(here::here("data", "mdcr_enroll_ab_4.rds"))
+mdcr_enroll_ab_5 <- readr::read_rds(here::here("data", "mdcr_enroll_ab_5.rds"))
+mdcr_enroll_ab_6 <- readr::read_rds(here::here("data", "mdcr_enroll_ab_6.rds"))
+mdcr_enroll_ab_7 <- readr::read_rds(here::here("data", "mdcr_enroll_ab_7.rds"))
+mdcr_enroll_ab_8 <- readr::read_rds(here::here("data", "mdcr_enroll_ab_8.rds"))
