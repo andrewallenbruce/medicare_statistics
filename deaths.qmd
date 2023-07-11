@@ -1,0 +1,194 @@
+---
+title: "Medicare Deaths"
+author: "Andrew Bruce"
+format: 
+  html:
+    theme: zephyr
+    toc: true
+    number-sections: false
+date: last-modified
+code-fold: true
+code-overflow: scroll
+---
+
+```{r setup}
+#| echo: false
+#| eval: true
+#| message: false
+source(here::here("R", "utils.R"))
+source(here::here("R", "deaths.R"))
+library(tidyverse)
+library(scalesextra)
+```
+
+
+## Medicare Deaths
+
+Information on all Medicare beneficiary deaths, by type of entitlement, health care delivery, demographic characteristics, and geography.
+
+### Deaths by Month
+
+```{r}
+#| message: false
+# Total Beneficiary Deaths by Month, 2008-2021
+mon_tot <- mdcr_enroll_ab_33 |> 
+  dplyr::mutate(group = "Total", 
+                .after = year)
+mon_tot
+```
+
+
+```{r}
+# Original Medicare Beneficiary Deaths by Month, 2008-2021
+mon_orig <- mdcr_enroll_ab_36 |> 
+  dplyr::mutate(group = "Original", 
+                .after = year)
+mon_orig
+```
+
+
+```{r}
+# Medicare Advantage and Other Health Plan Beneficiary Deaths by Month, 2008-2021
+mon_ma <- mdcr_enroll_ab_38 |> 
+  dplyr::mutate(group = "Medicare Advantage", 
+                .after = year)
+mon_ma
+```
+
+
+```{r}
+# ALL Deaths by Month, 2008-2021
+deaths_by_month <- dplyr::full_join(mon_tot, mon_orig) |> 
+  dplyr::full_join(mon_ma)
+deaths_by_month
+```
+
+
+```{r}
+deaths_by_month_pct <- deaths_by_month |> 
+  dplyr::select(year, 
+                group, 
+                dplyr::contains("pct"),
+                -dplyr::contains("chg")) |> 
+  tidyr::pivot_longer(cols = dplyr::contains("pct"),
+                      names_to = "month",
+                      values_to = "deaths_pct") |> 
+  dplyr::mutate(month = stringr::str_remove(month, "_pct"),
+                month = stringr::str_to_title(month),
+                month = factor(month, levels = month.name),
+                date = clock::as_date(clock::year_month_day(year, as.integer(month), 1)),
+                mon = lubridate::month(date, label = TRUE, abbr = TRUE)) |> 
+  dplyr::select(date, month, mon, year, group, deaths_pct)
+deaths_by_month_pct
+```
+
+
+```{r}
+deaths_by_month_n <- deaths_by_month |> 
+  dplyr::select(year, 
+                group, 
+                dplyr::any_of(tolower(month.name))) |> 
+  tidyr::pivot_longer(cols = dplyr::any_of(tolower(month.name)),
+                      names_to = "month",
+                      values_to = "deaths") |> 
+  dplyr::mutate(month = stringr::str_to_title(month),
+                month = factor(month, levels = month.name),
+                date = clock::as_date(clock::year_month_day(year, as.integer(month), 1)),
+                mon = lubridate::month(date, label = TRUE, abbr = TRUE)) |> 
+  dplyr::select(date, month, mon, year, group, deaths)
+deaths_by_month_n
+```
+
+```{r}
+deaths_by_month_n |>  
+  ggplot2::ggplot(aes(x = date)) +
+  geom_line(aes(y = deaths, color = group, linetype = group), linewidth = 0.5) +
+  scale_fill_manual(name = "", values = c("red","steelblue", "darkgreen")) +
+  scale_color_manual(name = "", values = c("red","steelblue", "darkgreen")) +
+  scale_linetype_manual(name = "", values = c(1, 1, 1))+
+  scalesextra::scale_y_pretty() +
+  labs(x = NULL, y = NULL) +
+  theme(legend.position = "bottom")
+```
+
+<br>
+
+```{r}
+deaths_by_month_pct |>  
+  dplyr::filter(group == "Total") |> 
+  ggplot2::ggplot(aes(x = date)) +
+  geom_line(aes(y = deaths_pct 
+                #color = group, 
+                #linetype = group
+                ), linewidth = 0.5) +
+  scale_fill_manual(name = "", values = c("red","steelblue", "darkgreen")) +
+  scale_color_manual(name = "", values = c("red","steelblue", "darkgreen")) +
+  scale_linetype_manual(name = "", values = c(1, 1, 1))+
+  scalesextra::scale_y_pct() +
+  labs(x = NULL, y = NULL) +
+  theme(legend.position = "bottom")
+```
+
+<br>
+
+```{r}
+deaths_by_month_n |>  
+  dplyr::filter(group == "Total", year < 2022) |> 
+  ggplot2::ggplot(aes(x = mon)) +
+  geom_point(aes(y = deaths, color = year, fill = year)) +
+  geom_line(aes(y = deaths, group = year, color = year), linewidth = 0.5) +
+  scalesextra::scale_y_pretty2() +
+  labs(x = NULL, y = NULL) + 
+  theme(legend.position = "bottom")
+```
+
+<br>
+
+```{r}
+deaths_by_month_pct |>  
+  dplyr::filter(group == "Total", year < 2022) |> 
+  ggplot2::ggplot(aes(x = mon)) +
+  geom_point(aes(y = deaths_pct, color = year, fill = year > 2018, shape = year > 2018), size = 2.5) +
+  geom_line(aes(y = deaths_pct, group = year, color = year, linetype = year > 2018), linewidth = 0.5) +
+  scalesextra::scale_y_pct() +
+  labs(x = NULL, y = NULL) + 
+  theme(legend.position = "bottom")
+```
+
+<br>
+
+### Deaths by Residence
+
+Total Beneficiary Deaths by Area of Residence, 2013-2021
+
+```{r mdcr_enroll_ab_35}
+mdcr_enroll_ab_35
+```
+
+<br>
+
+Original Medicare Beneficiary Deaths by Area of Residence, 2013-2021
+
+```{r mdcr_enroll_ab_37}
+mdcr_enroll_ab_37
+```
+
+<br>
+
+Medicare Advantage and Other Health Plan Beneficiary Deaths by Area of
+Residence, 2013-2021
+
+```{r mdcr_enroll_ab_39}
+mdcr_enroll_ab_39
+```
+
+
+<br>
+
+### Death Demographics
+
+Total Beneficiary Deaths Demographics, 2013-2021
+
+```{r mdcr_enroll_ab_34}
+mdcr_enroll_ab_34
+```

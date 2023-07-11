@@ -13,6 +13,8 @@ code-overflow: scroll
 
 The CMS Program Statistics (CPS) includes high-level summary reports focused on Medicare populations, use, and payment, as well as counts for Medicare-certified institutional and non-institutional providers.
 
+[Medicare Deaths](https://andrewallenbruce.github.io/medicare_statistics/deaths.html)
+
 ## Medicare Enrollment
 
 The Medicare Enrollment reports contain trend, demographic, and state tables showing total Medicare enrollment, Original Medicare enrollment, Medicare Advantage and Other Health Plan enrollment, newly-enrolled beneficiaries, deaths, Medicare-Medicaid Enrollment, and Medicare Part D enrollment. These include data on all Medicare enrollees by geography, type of coverage, type of entitlement, and demographic characteristics.
@@ -21,6 +23,7 @@ The Medicare Enrollment reports contain trend, demographic, and state tables sho
 #| echo: false
 #| eval: true
 source(here::here("R", "utils.R"))
+source(here::here("R", "enrollment.R"))
 ```
 
 
@@ -585,73 +588,3 @@ mdcr_enroll_ab_8
 mdcr_enroll_avgs
 ```
 
-<br>
-
-## Medicare Deaths
-
-Information on all Medicare beneficiary deaths, by type of entitlement, health care delivery, demographic characteristics, and geography.
-
-### Deaths by Month
-
-Total Beneficiary Deaths by Month, 2008-2021
-
-```{r mdcr_enroll_ab_33}
-mdcr_enroll_ab_33
-```
-
-
-
-<br>
-
-Original Medicare Beneficiary Deaths by Month, 2008-2021
-
-```{r mdcr_enroll_ab_36}
-mdcr_enroll_ab_36
-```
-
-<br>
-
-
-Medicare Advantage and Other Health Plan Beneficiary Deaths by Month, 2008-2021
-
-```{r mdcr_enroll_ab_38}
-mdcr_enroll_ab_38
-```
-
-<br>
-
-### Deaths by Residence
-
-Total Beneficiary Deaths by Area of Residence, 2013-2021
-
-```{r mdcr_enroll_ab_35}
-mdcr_enroll_ab_35
-```
-
-<br>
-
-Original Medicare Beneficiary Deaths by Area of Residence, 2013-2021
-
-```{r mdcr_enroll_ab_37}
-mdcr_enroll_ab_37
-```
-
-<br>
-
-Medicare Advantage and Other Health Plan Beneficiary Deaths by Area of
-Residence, 2013-2021
-
-```{r mdcr_enroll_ab_39}
-mdcr_enroll_ab_39
-```
-
-
-<br>
-
-### Death Demographics
-
-Total Beneficiary Deaths Demographics, 2013-2021
-
-```{r mdcr_enroll_ab_34}
-mdcr_enroll_ab_34
-```
