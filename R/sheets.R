@@ -446,3 +446,50 @@ readr::write_rds(mdcr_enroll_ab_39,
                  compression = 9L)
 
 readr::read_rds(here::here("data", "mdcr_enroll_ab_39.rds"))
+
+medicare_new <- "https://docs.google.com/spreadsheets/d/1xWzuKlfe1pfKrVFZMqWnSqEG7pbqMbTtC3amSKjo2t0/edit#gid=1837294709"
+# MDCR ENROLL AB 21.  Medicare Newly Enrolled Beneficiaries:  
+# Total, Aged, and Disabled Enrollees, Yearly Trend
+mdcr_enroll_ab_21 <- googlesheets4::read_sheet(
+  ss = medicare_new, 
+  sheet = "mdcr_enroll_ab_21")
+
+
+mdcr_enroll_ab_21 <- mdcr_enroll_ab_21 |> 
+  dplyr::mutate(year = as.integer(year))
+
+readr::write_rds(mdcr_enroll_ab_21, 
+                 "data/mdcr_enroll_ab_21.rds", 
+                 "xz", 
+                 compression = 9L)
+
+readr::read_rds(here::here("data", "mdcr_enroll_ab_21.rds"))
+
+# MDCR ENROLL AB 22.  Medicare Newly Enrolled Beneficiaries: 
+# Total Enrollees by Month of Enrollment, Yearly Trend
+mdcr_enroll_ab_22 <- googlesheets4::read_sheet(
+  ss = medicare_new, 
+  sheet = "mdcr_enroll_ab_22")
+
+# MDCR ENROLL AB 23.  Medicare Newly Enrolled Beneficiaries: # Total Enrollees, by Demographic Characteristics
+# MDCR ENROLL AB 24.  Medicare Newly Enrolled Beneficiaries: # Total, Aged, and Disabled Enrollees, by Area of Residence
+# MDCR ENROLL AB 25.  Medicare Newly Enrolled Beneficiaries: # Total, Aged, and Disabled Original Medicare Enrollees
+
+# MDCR ENROLL AB 26.  Medicare Newly Enrolled Beneficiaries: 
+# Original Medicare Enrollees by Month of Enrollment, Yearly Trend
+mdcr_enroll_ab_26 <- googlesheets4::read_sheet(
+  ss = medicare_new, 
+  sheet = "mdcr_enroll_ab_26")
+
+# MDCR ENROLL AB 27.  Medicare Newly Enrolled Beneficiaries: # Original Medicare Enrollees, by Demographic Characteristics
+# MDCR ENROLL AB 28.  Medicare Newly Enrolled Beneficiaries: # Total, Aged, and Disabled Original Medicare Enrollees, by Area of Residence
+# MDCR ENROLL AB 29.  Medicare Newly Enrolled Beneficiaries: # Total, Aged, and Disabled Medicare Advantage and Other Health Plan Enrollees, Yearly Trend
+
+# MDCR ENROLL AB 30.  Medicare Newly Enrolled Beneficiaries: 
+# Medicare Advantage and Other Health Plan Enrollees, by Month of Enrollment, Yearly Trend
+mdcr_enroll_ab_30 <- googlesheets4::read_sheet(
+  ss = medicare_new, 
+  sheet = "mdcr_enroll_ab_30")
+
+# MDCR ENROLL AB 31.  Medicare Newly Enrolled Beneficiaries: # Medicare Advantage and Other Health Plan Enrollees, by Demographic Characteristics
+# MDCR ENROLL AB 32.  Medicare Newly Enrolled Beneficiaries: # Total, Aged, and Disabled Medicare Advantage and Other Health Plan Enrollees, by Area of Residence

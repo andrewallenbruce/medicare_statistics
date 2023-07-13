@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Andrew Bruce">
-<meta name="dcterms.date" content="2023-07-11">
+<meta name="dcterms.date" content="2023-07-13">
 
 <title>Medicare Deaths</title>
 <style>
@@ -137,7 +137,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">July 11, 2023</p>
+      <p class="date">July 13, 2023</p>
     </div>
   </div>
   
@@ -360,18 +360,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>deaths_by_month_n <span class="sc">|&gt;</span>  </span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  ggplot2<span class="sc">::</span><span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> date)) <span class="sc">+</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> deaths, <span class="at">color =</span> group, <span class="at">linetype =</span> group), <span class="at">linewidth =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">name =</span> <span class="st">""</span>, <span class="at">values =</span> <span class="fu">c</span>(<span class="st">"red"</span>,<span class="st">"steelblue"</span>, <span class="st">"darkgreen"</span>)) <span class="sc">+</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">name =</span> <span class="st">""</span>, <span class="at">values =</span> <span class="fu">c</span>(<span class="st">"red"</span>,<span class="st">"steelblue"</span>, <span class="st">"darkgreen"</span>)) <span class="sc">+</span></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_linetype_manual</span>(<span class="at">name =</span> <span class="st">""</span>, <span class="at">values =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>))<span class="sc">+</span></span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  scalesextra<span class="sc">::</span><span class="fu">scale_y_pretty</span>() <span class="sc">+</span></span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_date</span>(<span class="at">date_breaks =</span> <span class="st">"1 year"</span>, <span class="at">date_labels =</span> <span class="st">"%y"</span>) <span class="sc">+</span></span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="cn">NULL</span>) <span class="sc">+</span> </span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  ggthemes<span class="sc">::</span><span class="fu">theme_fivethirtyeight</span>() <span class="sc">+</span></span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>,</span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>        <span class="at">legend.key =</span> <span class="fu">element_blank</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>d_ends <span class="ot">&lt;-</span> deaths_by_month_n <span class="sc">|&gt;</span> </span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">arrange</span>(dplyr<span class="sc">::</span><span class="fu">desc</span>(date)) <span class="sc">|&gt;</span> </span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">3</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">pull</span>(deaths)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>deaths_by_month_n <span class="sc">|&gt;</span>  </span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  ggplot2<span class="sc">::</span><span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> date)) <span class="sc">+</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> deaths, <span class="at">color =</span> group), <span class="at">linewidth =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span>comma, <span class="at">sec.axis =</span> ggplot2<span class="sc">::</span><span class="fu">sec_axis</span>(<span class="sc">~</span> ., <span class="at">breaks =</span> d_ends)) <span class="sc">+</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  gghighlight<span class="sc">::</span><span class="fu">gghighlight</span>(deaths <span class="sc">&gt;</span> <span class="dv">0</span>, <span class="at">label_key =</span> group, <span class="at">line_label_type =</span> <span class="st">"sec_axis"</span>) <span class="sc">+</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">name =</span> <span class="st">""</span>, <span class="at">values =</span> <span class="fu">c</span>(<span class="st">"red"</span>,<span class="st">"steelblue"</span>, <span class="st">"darkgreen"</span>)) <span class="sc">+</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  <span class="co">#scalesextra::scale_y_pretty() +</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_date</span>(<span class="at">date_breaks =</span> <span class="st">"1 year"</span>, <span class="at">date_labels =</span> <span class="st">"%y"</span>, <span class="at">expand =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>)) <span class="sc">+</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  ggthemes<span class="sc">::</span><span class="fu">theme_fivethirtyeight</span>() <span class="sc">+</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>,</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>        <span class="at">legend.key =</span> <span class="fu">element_blank</span>(),</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>        <span class="at">axis.text.y.right =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">10</span>, <span class="at">family =</span> <span class="st">"Karla"</span>, <span class="at">face =</span> <span class="st">"bold"</span>)) <span class="sc">+</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="cn">NULL</span>, <span class="at">caption =</span> <span class="st">"Plot by @aabrucehimni"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <p><img src="deaths_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>

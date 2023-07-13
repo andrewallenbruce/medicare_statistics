@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.340">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Andrew Bruce">
+<meta name="dcterms.date" content="2023-07-13">
+
+<title>Time Series Forecasting</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+</head>
+
+<body>
+
+<div id="quarto-search-results"></div>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#links" id="toc-links" class="nav-link active" data-scroll-target="#links">Links</a></li>
+  <li><a href="#forecasting-data-and-methods" id="toc-forecasting-data-and-methods" class="nav-link" data-scroll-target="#forecasting-data-and-methods">Forecasting Data and Methods</a></li>
+  <li><a href="#tsibble-objects" id="toc-tsibble-objects" class="nav-link" data-scroll-target="#tsibble-objects"><code>tsibble</code> Objects</a></li>
+  <li><a href="#the-seasonal-period" id="toc-the-seasonal-period" class="nav-link" data-scroll-target="#the-seasonal-period">The Seasonal Period</a>
+  <ul class="collapse">
+  <li><a href="#time-series-patterns" id="toc-time-series-patterns" class="nav-link" data-scroll-target="#time-series-patterns">Time Series Patterns</a></li>
+  </ul></li>
+  <li><a href="#time-series-decomposition" id="toc-time-series-decomposition" class="nav-link" data-scroll-target="#time-series-decomposition">Time Series Decomposition</a>
+  <ul class="collapse">
+  <li><a href="#transformations-and-adjustments" id="toc-transformations-and-adjustments" class="nav-link" data-scroll-target="#transformations-and-adjustments">Transformations and Adjustments</a>
+  <ul class="collapse">
+  <li><a href="#calendar-adjustments" id="toc-calendar-adjustments" class="nav-link" data-scroll-target="#calendar-adjustments">Calendar adjustments</a></li>
+  <li><a href="#population-adjustments" id="toc-population-adjustments" class="nav-link" data-scroll-target="#population-adjustments">Population adjustments</a></li>
+  <li><a href="#inflation-adjustments" id="toc-inflation-adjustments" class="nav-link" data-scroll-target="#inflation-adjustments">Inflation adjustments</a></li>
+  </ul></li>
+  <li><a href="#mathematical-transformations" id="toc-mathematical-transformations" class="nav-link" data-scroll-target="#mathematical-transformations">Mathematical transformations</a></li>
+  <li><a href="#time-series-components" id="toc-time-series-components" class="nav-link" data-scroll-target="#time-series-components">Time Series Components</a></li>
+  </ul></li>
+  <li><a href="#monthly-deaths" id="toc-monthly-deaths" class="nav-link" data-scroll-target="#monthly-deaths">Monthly Deaths</a>
+  <ul class="collapse">
+  <li><a href="#time-plot" id="toc-time-plot" class="nav-link" data-scroll-target="#time-plot">Time Plot</a></li>
+  <li><a href="#seasonal-plot" id="toc-seasonal-plot" class="nav-link" data-scroll-target="#seasonal-plot">Seasonal Plot</a></li>
+  <li><a href="#seasonal-subseries-plot" id="toc-seasonal-subseries-plot" class="nav-link" data-scroll-target="#seasonal-subseries-plot">Seasonal Subseries Plot</a></li>
+  <li><a href="#lag-plot" id="toc-lag-plot" class="nav-link" data-scroll-target="#lag-plot">Lag Plot</a></li>
+  <li><a href="#autocorrelation-plot" id="toc-autocorrelation-plot" class="nav-link" data-scroll-target="#autocorrelation-plot">Autocorrelation Plot</a>
+  <ul class="collapse">
+  <li><a href="#trend-and-seasonality-in-acf-plots" id="toc-trend-and-seasonality-in-acf-plots" class="nav-link" data-scroll-target="#trend-and-seasonality-in-acf-plots">Trend and seasonality in ACF plots</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#quarterly-deaths" id="toc-quarterly-deaths" class="nav-link" data-scroll-target="#quarterly-deaths">Quarterly Deaths</a>
+  <ul class="collapse">
+  <li><a href="#time-plot-1" id="toc-time-plot-1" class="nav-link" data-scroll-target="#time-plot-1">Time Plot</a></li>
+  <li><a href="#seasonal-plot-1" id="toc-seasonal-plot-1" class="nav-link" data-scroll-target="#seasonal-plot-1">Seasonal Plot</a></li>
+  <li><a href="#seasonal-subseries-plot-1" id="toc-seasonal-subseries-plot-1" class="nav-link" data-scroll-target="#seasonal-subseries-plot-1">Seasonal Subseries Plot</a></li>
+  <li><a href="#lag-plot-1" id="toc-lag-plot-1" class="nav-link" data-scroll-target="#lag-plot-1">Lag Plot</a></li>
+  <li><a href="#autocorrelation-plot-1" id="toc-autocorrelation-plot-1" class="nav-link" data-scroll-target="#autocorrelation-plot-1">Autocorrelation Plot</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Time Series Forecasting</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Andrew Bruce </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">July 13, 2023</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="links" class="level1">
+<h1>Links</h1>
+<p><a href="https://otexts.com/fpp3/index.html">Forecasting: Principles and Practice</a></p>
+</section>
+<section id="forecasting-data-and-methods" class="level1">
+<h1>Forecasting Data and Methods</h1>
+<p>The appropriate forecasting methods depend largely on what data are available. <br></p>
+<p>If there are no data available, or if the data available are not relevant to the forecasts, then <strong>qualitative forecasting</strong> methods must be used. These methods are not purely guesswork — there are well-developed structured approaches to obtaining good forecasts without using historical data. These methods are discussed in Chapter 6. <br></p>
+<p><strong>Quantitative forecasting</strong> can be applied when two conditions are satisfied: <br></p>
+<ol type="1">
+<li>numerical information about the past is available;</li>
+<li>it is reasonable to assume that some aspects of the past patterns will continue into the future.</li>
+</ol>
+<p><br></p>
+<p>There is a wide range of quantitative forecasting methods, often developed within specific disciplines for specific purposes. Each method has its own properties, accuracies, and costs that must be considered when choosing a specific method. <br></p>
+<p>Most quantitative prediction problems use either time series data (collected at regular intervals over time) or cross-sectional data (collected at a single point in time). In this book we are concerned with forecasting future data, and we concentrate on the time series domain. <br></p>
+<p>Anything that is observed sequentially over time is a time series. In this book, we will only consider time series that are observed at regular intervals of time (e.g., hourly, daily, weekly, monthly, quarterly, annually). Irregularly spaced time series can also occur, but are beyond the scope of this book. <br></p>
+<p>When forecasting time series data, the aim is to estimate how the sequence of observations will continue into the future. <br></p>
+</section>
+<section id="tsibble-objects" class="level1">
+<h1><code>tsibble</code> Objects</h1>
+<p>A time series can be thought of as a list of numbers (the measurements), along with some information about what times those numbers were recorded (the index). This information can be stored as a <code>tsibble</code> object in R. <br></p>
+<p>Suppose you have annual observations for the last few years:</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>deaths_month <span class="ot">&lt;-</span> mdcr_enroll_ab_33 <span class="sc">|&gt;</span> </span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(year, dplyr<span class="sc">::</span><span class="fu">any_of</span>(<span class="fu">tolower</span>(month.name))) <span class="sc">|&gt;</span> </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(<span class="at">cols =</span> dplyr<span class="sc">::</span><span class="fu">any_of</span>(<span class="fu">tolower</span>(month.name)),</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>                      <span class="at">names_to =</span> <span class="st">"month"</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>                      <span class="at">values_to =</span> <span class="st">"deaths"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">month =</span> stringr<span class="sc">::</span><span class="fu">str_to_title</span>(month),</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>                <span class="at">month =</span> <span class="fu">factor</span>(month, <span class="at">levels =</span> month.name),</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>                <span class="at">date =</span> clock<span class="sc">::</span><span class="fu">as_date</span>(clock<span class="sc">::</span><span class="fu">year_month_day</span>(year, <span class="fu">as.integer</span>(month), <span class="dv">1</span>)),</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>                <span class="at">mon =</span> lubridate<span class="sc">::</span><span class="fu">month</span>(date, <span class="at">label =</span> <span class="cn">TRUE</span>, <span class="at">abbr =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>                <span class="at">type =</span> <span class="st">"Medicare"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(type, date, deaths) <span class="sc">|&gt;</span> </span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">month =</span> tsibble<span class="sc">::</span><span class="fu">yearmonth</span>(date),</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>                <span class="at">date =</span> <span class="cn">NULL</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  tsibble<span class="sc">::</span><span class="fu">as_tsibble</span>(<span class="at">index =</span> month)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>deaths_month</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tsibble: 168 x 3 [1M]
+   type     deaths    month
+   &lt;chr&gt;     &lt;dbl&gt;    &lt;mth&gt;
+ 1 Medicare 183291 2008 Jan
+ 2 Medicare 182939 2008 Feb
+ 3 Medicare 191125 2008 Mar
+ 4 Medicare 167865 2008 Apr
+ 5 Medicare 162702 2008 May
+ 6 Medicare 151849 2008 Jun
+ 7 Medicare 152562 2008 Jul
+ 8 Medicare 152562 2008 Aug
+ 9 Medicare 150384 2008 Sep
+10 Medicare 161946 2008 Oct
+# ℹ 158 more rows</code></pre>
+</div>
+</div>
+<p><br></p>
+<p>First, the <code>date</code> column is being converted from text to a monthly time object with <code>yearmonth()</code>. We then convert the data frame to a <code>tsibble</code> by identifying the index variable using <code>as_tsibble()</code>. Note the addition of <code>[1M]</code> on the first line indicating this is monthly data. <br></p>
+<p>Other time class functions can be used depending on the frequency of the observations: <br></p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>deaths_qtr <span class="ot">&lt;-</span> mdcr_enroll_ab_33 <span class="sc">|&gt;</span> </span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(year, dplyr<span class="sc">::</span><span class="fu">any_of</span>(<span class="fu">tolower</span>(month.name))) <span class="sc">|&gt;</span> </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(<span class="at">cols =</span> dplyr<span class="sc">::</span><span class="fu">any_of</span>(<span class="fu">tolower</span>(month.name)),</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>                      <span class="at">names_to =</span> <span class="st">"month"</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>                      <span class="at">values_to =</span> <span class="st">"deaths"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">month =</span> stringr<span class="sc">::</span><span class="fu">str_to_title</span>(month),</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>                <span class="at">month =</span> <span class="fu">factor</span>(month, <span class="at">levels =</span> month.name),</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>                <span class="at">date =</span> clock<span class="sc">::</span><span class="fu">as_date</span>(clock<span class="sc">::</span><span class="fu">year_month_day</span>(year, <span class="fu">as.integer</span>(month), <span class="dv">1</span>)),</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>                <span class="at">mon =</span> lubridate<span class="sc">::</span><span class="fu">month</span>(date, <span class="at">label =</span> <span class="cn">TRUE</span>, <span class="at">abbr =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>                <span class="at">type =</span> <span class="st">"Medicare"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(type, date, deaths) <span class="sc">|&gt;</span> </span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">quarter =</span> tsibble<span class="sc">::</span><span class="fu">yearquarter</span>(date),</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>                <span class="at">date =</span> <span class="cn">NULL</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(quarter, type) <span class="sc">|&gt;</span> </span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">summarise</span>(<span class="at">deaths =</span> <span class="fu">sum</span>(deaths), <span class="at">.groups =</span> <span class="st">"drop"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  tsibble<span class="sc">::</span><span class="fu">as_tsibble</span>(<span class="at">index =</span> quarter)</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>deaths_qtr</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tsibble: 56 x 3 [1Q]
+   quarter type     deaths
+     &lt;qtr&gt; &lt;chr&gt;     &lt;dbl&gt;
+ 1 2008 Q1 Medicare 557355
+ 2 2008 Q2 Medicare 482416
+ 3 2008 Q3 Medicare 455508
+ 4 2008 Q4 Medicare 502936
+ 5 2009 Q1 Medicare 520775
+ 6 2009 Q2 Medicare 477660
+ 7 2009 Q3 Medicare 459395
+ 8 2009 Q4 Medicare 506256
+ 9 2010 Q1 Medicare 525836
+10 2010 Q2 Medicare 483274
+# ℹ 46 more rows</code></pre>
+</div>
+</div>
+<p><br></p>
+</section>
+<section id="the-seasonal-period" class="level1">
+<h1>The Seasonal Period</h1>
+<p>Some graphics and some models will use the seasonal period of the data. The seasonal period is the number of observations before the seasonal pattern repeats. In most cases, this will be automatically detected using the time index variable. <br></p>
+<p>For quarterly, monthly and weekly data, there is only one seasonal period — the number of observations within each year. Actually, there are not<br>
+52 weeks in a year, but <code>365.25 / 7 = 52.18</code> on average, allowing for a leap year every fourth year. Approximating seasonal periods to integers can be useful as many seasonal terms in models only support integer seasonal periods. <br></p>
+<section id="time-series-patterns" class="level2">
+<h2 class="anchored" data-anchor-id="time-series-patterns">Time Series Patterns</h2>
+<p>Many time series include trend, cycles and seasonality. When choosing a forecasting method, we will first need to identify the time series patterns in the data, and then choose a method that is able to capture the patterns properly. <br></p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Trend
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>A trend exists when there is a long-term increase or decrease in the data. It does not have to be linear. Sometimes we will refer to a trend as “changing direction”, when it might go from an increasing trend to a decreasing trend.</p>
+</div>
+</div>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Seasonal
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>A seasonal pattern occurs when a time series is affected by seasonal factors such as the time of the year or the day of the week. Seasonality is always of a fixed and known period.</p>
+</div>
+</div>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Cyclic
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>A cycle occurs when the data exhibit rises and falls that are not of a fixed frequency. These fluctuations are usually due to economic conditions, and are often related to the “business cycle”. The duration of these fluctuations is usually at least 2 years. <br></p>
+<p>Many people confuse cyclic behaviour with seasonal behaviour, but they are really quite different. If the fluctuations are not of a fixed frequency then they are cyclic; if the frequency is unchanging and associated with some aspect of the calendar, then the pattern is seasonal. In general, the average length of cycles is longer than the length of a seasonal pattern, and the magnitudes of cycles tend to be more variable than the magnitudes of seasonal patterns.</p>
+</div>
+</div>
+<p><br></p>
+</section>
+</section>
+<section id="time-series-decomposition" class="level1">
+<h1>Time Series Decomposition</h1>
+<p>Time series data can exhibit a variety of patterns, and it is often helpful to split a time series into several components, each representing an underlying pattern category. <br></p>
+<p>There are three types of time series patterns: <strong>trend, seasonality and cycles</strong>. When we decompose a time series into components, we usually combine the trend and cycle into a single <strong>trend-cycle</strong> component (often just called the <strong>trend</strong> for simplicity). Thus we can think of a time series as comprising three components: a trend-cycle component, a seasonal component, and a remainder component (containing anything else in the time series). <br></p>
+<p>When decomposing a time series, it is sometimes helpful to first transform or adjust the series in order to make the decomposition (and later analysis) as simple as possible. <br></p>
+<section id="transformations-and-adjustments" class="level2">
+<h2 class="anchored" data-anchor-id="transformations-and-adjustments">Transformations and Adjustments</h2>
+<p>Adjusting the historical data can often lead to a simpler time series. Here, we deal with four kinds of adjustments: calendar adjustments, population adjustments, inflation adjustments and mathematical transformations. The purpose of these adjustments and transformations is to simplify the patterns in the historical data by removing known sources of variation, or by making the pattern more consistent across the whole data set. Simpler patterns are usually easier to model and lead to more accurate forecasts. <br></p>
+<section id="calendar-adjustments" class="level3">
+<h3 class="anchored" data-anchor-id="calendar-adjustments">Calendar adjustments</h3>
+<p>Some of the variation seen in seasonal data may be due to simple calendar effects. In such cases, it is usually much easier to remove the variation before doing any further analysis. <br></p>
+<p>For example, if you are studying the total monthly sales in a retail store, there will be variation between the months simply because of the different numbers of trading days in each month, in addition to the seasonal variation across the year. It is easy to remove this variation by computing average sales per trading day in each month, rather than total sales in the month. Then we effectively remove the calendar variation. <br></p>
+</section>
+<section id="population-adjustments" class="level3">
+<h3 class="anchored" data-anchor-id="population-adjustments">Population adjustments</h3>
+<p>Any data that are affected by population changes can be adjusted to give per-capita data. That is, consider the data per person (or per thousand people, or per million people) rather than the total. For example, if you are studying the number of hospital beds in a particular region over time, the results are much easier to interpret if you remove the effects of population changes by considering the number of beds per thousand people. Then you can see whether there have been real increases in the number of beds, or whether the increases are due entirely to population increases. It is possible for the total number of beds to increase, but the number of beds per thousand people to decrease. This occurs when the population is increasing faster than the number of hospital beds. For most data that are affected by population changes, it is best to use per-capita data rather than the totals. <br></p>
+</section>
+<section id="inflation-adjustments" class="level3">
+<h3 class="anchored" data-anchor-id="inflation-adjustments">Inflation adjustments</h3>
+<p>Data which are affected by the value of money are best adjusted before modelling. For example, the average cost of a new house will have increased over the last few decades due to inflation. A $200,000 house this year is not the same as a $200,000 house twenty years ago. For this reason, financial time series are usually adjusted so that all values are stated in dollar values from a particular year. For example, the house price data may be stated in year 2000 dollars. <br></p>
+<p>To make these adjustments, a price index is used. If <span class="math inline">\(z_t\)</span> denotes the price index and <span class="math inline">\(y_t\)</span> denotes the original house price in year <span class="math inline">\(t\)</span>, then <span class="math inline">\(x_t = y_t/z_t ∗ z_2000\)</span> gives the adjusted house price at year 2000 dollar values. Price indexes are often constructed by government agencies. For consumer goods, a common price index is the Consumer Price Index (or CPI). <br></p>
+<p>This allows us to compare the growth or decline of industries relative to a common price value. For example, looking at aggregate annual “newspaper and book” retail turnover from aus_retail, and adjusting the data for inflation using CPI from global_economy allows us to understand the changes over time. <br></p>
+</section>
+</section>
+<section id="mathematical-transformations" class="level2">
+<h2 class="anchored" data-anchor-id="mathematical-transformations">Mathematical transformations</h2>
+<p>If the data shows variation that increases or decreases with the level of the series, then a transformation can be useful. For example, a logarithmic transformation is often useful.</p>
+</section>
+<section id="time-series-components" class="level2">
+<h2 class="anchored" data-anchor-id="time-series-components">Time Series Components</h2>
+</section>
+</section>
+<section id="monthly-deaths" class="level1">
+<h1>Monthly Deaths</h1>
+<section id="time-plot" class="level2">
+<h2 class="anchored" data-anchor-id="time-plot">Time Plot</h2>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>deaths_month <span class="sc">|&gt;</span> </span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  feasts<span class="sc">::</span><span class="fu">autoplot</span>(deaths) <span class="sc">+</span> </span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Medicare Beneficiary Deaths (Monthly)"</span>, </span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="cn">NULL</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="timeseries_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p><br></p>
+</section>
+<section id="seasonal-plot" class="level2">
+<h2 class="anchored" data-anchor-id="seasonal-plot">Seasonal Plot</h2>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>deaths_month <span class="sc">|&gt;</span> </span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  feasts<span class="sc">::</span><span class="fu">gg_season</span>(deaths, <span class="at">labels =</span> <span class="st">"both"</span>) <span class="sc">+</span> </span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Medicare Beneficiary Deaths (Monthly)"</span>, </span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="cn">NULL</span>, <span class="at">x =</span> <span class="cn">NULL</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="timeseries_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p><br></p>
+</section>
+<section id="seasonal-subseries-plot" class="level2">
+<h2 class="anchored" data-anchor-id="seasonal-subseries-plot">Seasonal Subseries Plot</h2>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>deaths_month <span class="sc">|&gt;</span> </span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  feasts<span class="sc">::</span><span class="fu">gg_subseries</span>(deaths) <span class="sc">+</span> </span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Medicare Beneficiary Deaths (Monthly)"</span>, </span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="cn">NULL</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="timeseries_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p><br></p>
+</section>
+<section id="lag-plot" class="level2">
+<h2 class="anchored" data-anchor-id="lag-plot">Lag Plot</h2>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>deaths_month <span class="sc">|&gt;</span> </span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  feasts<span class="sc">::</span><span class="fu">gg_lag</span>(deaths, <span class="at">geom =</span> <span class="st">"point"</span>) <span class="sc">+</span> </span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Medicare Beneficiary Deaths (Monthly)"</span>, <span class="at">y =</span> <span class="cn">NULL</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="timeseries_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p><br></p>
+</section>
+<section id="autocorrelation-plot" class="level2">
+<h2 class="anchored" data-anchor-id="autocorrelation-plot">Autocorrelation Plot</h2>
+<section id="trend-and-seasonality-in-acf-plots" class="level3">
+<h3 class="anchored" data-anchor-id="trend-and-seasonality-in-acf-plots">Trend and seasonality in ACF plots</h3>
+<p>When data have a trend, the autocorrelations for small lags tend to be large and positive because observations nearby in time are also nearby in value. So the ACF of a trended time series tends to have positive values that slowly decrease as the lags increase. <br></p>
+<p>When data are seasonal, the autocorrelations will be larger for the seasonal lags (at multiples of the seasonal period) than for other lags. <br></p>
+<p>When data are both trended and seasonal, you see a combination of these effects. The data shows both trend and seasonality. The slow decrease in the ACF as the lags increase is due to the trend, while the “scalloped” shape is due to the seasonality. <br></p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>deaths_month <span class="sc">|&gt;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  feasts<span class="sc">::</span><span class="fu">ACF</span>(deaths, <span class="at">lag_max =</span> <span class="dv">48</span>) <span class="sc">|&gt;</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  feasts<span class="sc">::</span><span class="fu">autoplot</span>() <span class="sc">+</span> </span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Medicare Beneficiary Deaths (Monthly)"</span>, </span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"ACF (Autocorrelation Function)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="timeseries_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p><br></p>
+</section>
+</section>
+</section>
+<section id="quarterly-deaths" class="level1">
+<h1>Quarterly Deaths</h1>
+<section id="time-plot-1" class="level2">
+<h2 class="anchored" data-anchor-id="time-plot-1">Time Plot</h2>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>deaths_qtr <span class="sc">|&gt;</span> </span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  feasts<span class="sc">::</span><span class="fu">autoplot</span>(deaths) <span class="sc">+</span> </span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Medicare Beneficiary Deaths (Quarterly)"</span>, <span class="at">y =</span> <span class="cn">NULL</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="timeseries_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p><br></p>
+</section>
+<section id="seasonal-plot-1" class="level2">
+<h2 class="anchored" data-anchor-id="seasonal-plot-1">Seasonal Plot</h2>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>deaths_qtr <span class="sc">|&gt;</span> </span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  feasts<span class="sc">::</span><span class="fu">gg_season</span>(deaths, <span class="at">labels =</span> <span class="st">"both"</span>) <span class="sc">+</span> </span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Medicare Beneficiary Deaths (Quarterly)"</span>, <span class="at">y =</span> <span class="cn">NULL</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="timeseries_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p><br></p>
+</section>
+<section id="seasonal-subseries-plot-1" class="level2">
+<h2 class="anchored" data-anchor-id="seasonal-subseries-plot-1">Seasonal Subseries Plot</h2>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>deaths_qtr <span class="sc">|&gt;</span> </span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  feasts<span class="sc">::</span><span class="fu">gg_subseries</span>(deaths) <span class="sc">+</span> </span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Medicare Beneficiary Deaths (Quarterly)"</span>, <span class="at">y =</span> <span class="cn">NULL</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="timeseries_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p><br></p>
+</section>
+<section id="lag-plot-1" class="level2">
+<h2 class="anchored" data-anchor-id="lag-plot-1">Lag Plot</h2>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>deaths_qtr <span class="sc">|&gt;</span> </span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  feasts<span class="sc">::</span><span class="fu">gg_lag</span>(deaths, <span class="at">geom =</span> <span class="st">"point"</span>) <span class="sc">+</span> </span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Medicare Beneficiary Deaths (Quarterly)"</span>, <span class="at">y =</span> <span class="cn">NULL</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="timeseries_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p><br></p>
+</section>
+<section id="autocorrelation-plot-1" class="level2">
+<h2 class="anchored" data-anchor-id="autocorrelation-plot-1">Autocorrelation Plot</h2>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>deaths_qtr <span class="sc">|&gt;</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  feasts<span class="sc">::</span><span class="fu">ACF</span>(deaths, <span class="at">lag_max =</span> <span class="dv">48</span>) <span class="sc">|&gt;</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  feasts<span class="sc">::</span><span class="fu">autoplot</span>() <span class="sc">+</span> </span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Medicare Beneficiary Deaths (Quarterly)"</span>, </span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"ACF (Autocorrelation Function)"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<p><img src="timeseries_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p><br></p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

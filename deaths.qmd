@@ -99,21 +99,30 @@ deaths_by_month_n
 ```
 
 ```{r}
+#| warning: false
+#| message: false
+d_ends <- deaths_by_month_n |> 
+  dplyr::arrange(dplyr::desc(date)) |> 
+  dplyr::slice_head(n = 3) |> 
+  dplyr::pull(deaths)
+
 deaths_by_month_n |>  
   ggplot2::ggplot(aes(x = date)) +
-  geom_line(aes(y = deaths, color = group, linetype = group), linewidth = 0.5) +
-  scale_fill_manual(name = "", values = c("red","steelblue", "darkgreen")) +
+  geom_line(aes(y = deaths, color = group), linewidth = 0.5) +
+  scale_y_continuous(labels = scales::comma, sec.axis = ggplot2::sec_axis(~ ., breaks = d_ends)) +
+  gghighlight::gghighlight(deaths > 0, label_key = group, line_label_type = "sec_axis") +
   scale_color_manual(name = "", values = c("red","steelblue", "darkgreen")) +
-  scale_linetype_manual(name = "", values = c(1, 1, 1))+
-  scalesextra::scale_y_pretty() +
-  scale_x_date(date_breaks = "1 year", date_labels = "%y") +
-  labs(x = NULL, y = NULL) + 
+  #scalesextra::scale_y_pretty() +
+  scale_x_date(date_breaks = "1 year", date_labels = "%y", expand = c(0, 0)) +
   ggthemes::theme_fivethirtyeight() +
   theme(legend.position = "none",
-        legend.key = element_blank())
+        legend.key = element_blank(),
+        axis.text.y.right = element_text(size = 10, family = "Karla", face = "bold")) +
+    labs(x = NULL, y = NULL, caption = "Plot by @aabrucehimni")
 ```
 
 <br>
+
 
 ```{r}
 above <- deaths_by_month_pct |> 
