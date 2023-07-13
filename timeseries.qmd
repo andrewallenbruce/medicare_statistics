@@ -54,7 +54,7 @@ A time series can be thought of as a list of numbers (the measurements), along w
 Suppose you have annual observations for the last few years:
 
 ```{r}
-deaths_month <- mdcr_enroll_ab_33 |> 
+deaths_month <- enroll_33 |> 
   dplyr::select(year, dplyr::any_of(tolower(month.name))) |> 
   tidyr::pivot_longer(cols = dplyr::any_of(tolower(month.name)),
                       names_to = "month",
@@ -78,7 +78,7 @@ First, the `date` column is being converted from text to a monthly time object w
 Other time class functions can be used depending on the frequency of the observations: <br>
 
 ```{r}
-deaths_qtr <- mdcr_enroll_ab_33 |> 
+deaths_qtr <- enroll_33 |> 
   dplyr::select(year, dplyr::any_of(tolower(month.name))) |> 
   tidyr::pivot_longer(cols = dplyr::any_of(tolower(month.name)),
                       names_to = "month",

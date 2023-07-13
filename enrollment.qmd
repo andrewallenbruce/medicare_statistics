@@ -43,7 +43,7 @@ Medicare beneficiaries enrolled in health plans that are offered by private comp
 ## Yearly Enrollment
 
 ```{r mdcr_enroll_ab_1}
-mdcr_enroll_ab_1 |> 
+enroll_1 |> 
   dplyr::select(Year = year, 
                 Total = total, 
                 Original = original, 
@@ -59,7 +59,7 @@ mdcr_enroll_ab_1 |>
 ## Absolute Change
 
 ```{r mdcr_enroll_ab_1_2}
-mdcr_enroll_ab_1 |> 
+enroll_1 |> 
   dplyr::select(Year = year, 
                 Total = total_chg, 
                 Original = original_chg, 
@@ -76,7 +76,7 @@ mdcr_enroll_ab_1 |>
 ## Relative Change
 
 ```{r mdcr_enroll_ab_1_3}
-mdcr_enroll_ab_1 |> 
+enroll_1 |> 
   dplyr::select(Year = year, 
                 Total = total_pct_chg, 
                 Original = original_pct_chg, 
@@ -97,7 +97,7 @@ mdcr_enroll_ab_1 |>
 #| echo: false
 #| eval: false
 
-mdcr_enroll_ab_1 |> 
+enroll_1 |> 
   dplyr::select(Year = year, 
                 #total, 
                 Original = original, 
@@ -143,7 +143,7 @@ mdcr_enroll_ab_1 |>
 #| warning: false
 #| echo: false
 #| eval: false
-mdcr_enroll_ab_1 |> 
+enroll_1 |> 
   dplyr::select(year, 
                 original_pct, 
                 ma_other_pct) |> 
@@ -165,7 +165,7 @@ mdcr_enroll_ab_1 |>
 #| warning: false
 #| echo: false
 #| eval: false
-mdcr_enroll_ab_1 |> 
+enroll_1 |> 
   dplyr::select(year, 
                 total_pct_chg,
                 original_pct_chg, 
@@ -187,7 +187,7 @@ mdcr_enroll_ab_1 |>
 <br>
 
 ```{r}
-mdcr_enroll_ab_1 |> 
+enroll_1 |> 
   dplyr::select(year,
                 total,
                 original,
@@ -242,7 +242,7 @@ All remaining counties, often labeled “noncore” counties because they are no
 :::
 
 ```{r mdcr_enroll_ab_2}
-mdcr_enroll_ab_2
+enroll_2
 ```
 
 <br>
@@ -251,7 +251,7 @@ mdcr_enroll_ab_2
 
 ```{r}
 #| column: page
-mdcr_enroll_ab_2 |> 
+enroll_2 |> 
   dplyr::select(year,
                 residence = area_of_residence,
                 Total = total_pct) |> 
@@ -292,7 +292,7 @@ mdcr_enroll_ab_2 |>
 #| column: page
 #| echo: false
 #| eval: false
-mdcr_enroll_ab_2 |> 
+enroll_2 |> 
   dplyr::select(year,
                 residence = area_of_residence,
                 ORIG = original_pct,
@@ -325,7 +325,7 @@ mdcr_enroll_ab_2 |>
 ```
 
 ```{r}
-mdcr_enroll_ab_2 |> 
+enroll_2 |> 
   dplyr::select(year,
                 residence = area_of_residence,
                 Original = original_pct,
@@ -380,51 +380,8 @@ mdcr_enroll_ab_2 |>
 <br>
 
 
-
-```{r}
-mdcr_enroll_ab_2 |> 
-  dplyr::select(year,
-                residence = area_of_residence,
-                Metro = metro_pct,
-                Micro = micro_pct,
-                'Non-CBSA' = non_cbsa_pct
-                # Metropolitan = metro_pct,
-                # Micropolitan = micro_pct,
-                # "Non-CBSA" = non_cbsa_pct
-                ) |> 
-  tidyr::pivot_longer(cols = c("Metro", "Micro", "Non-CBSA"), 
-                      names_to = "Type", 
-                      values_to = "Percentage") |> 
-  tidyr::pivot_wider(names_from = "year",
-                     values_from = "Percentage") |>
-  gt::gt(rowname_col = "Type", 
-         groupname_col = "residence") |> 
-  gt::opt_stylize(style = 1, color = "red") |> 
-  gt::tab_options(
-    column_labels.font.weight = "bold",
-    stub.font.weight = "bold",
-    stub.font.size = gt::pct(80),
-    row_group.font.weight = "bold",
-    row_group.font.size = gt::pct(70),
-    row_group.as_column = TRUE) |>
-  gt::data_color(direction = "row",
-                 method = "numeric",
-                 palette = "ggsci::red_material") |>
-  gt::cols_align_decimal() |> 
-  gt::sub_zero(zero_text = "< 0%") |>
-  gt::fmt_percent(columns = 3:11,
-                  decimals = 1,
-                  drop_trailing_zeros = TRUE,
-                  drop_trailing_dec_mark = TRUE)
-```
-
-
-
-<br>
-
-
 ### Enrollment Averages
 
 ```{r mdcr_enroll_avgs}
-mdcr_enroll_avgs
+enroll_avgs
 ```

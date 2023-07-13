@@ -38,7 +38,7 @@ A voluntary insurance program that provides insurance benefits for physicians’
 :::
 
 ```{r mdcr_enroll_ab_3}
-mdcr_enroll_ab_3
+enroll_3
 ```
 
 <br>
@@ -46,7 +46,7 @@ mdcr_enroll_ab_3
 Part A and/or Part B Enrollees by Age Group, 2008-2021
 
 ```{r mdcr_enroll_ab_4}
-age_tot <- mdcr_enroll_ab_4 |> 
+age_tot <- enroll_4 |> 
   dplyr::select(year, dplyr::contains("tot_")) |> 
   tidyr::pivot_longer(!year, names_to = "group", values_to = "total") |> 
   dplyr::mutate(group = stringr::str_remove(group, "tot_"),
@@ -62,7 +62,7 @@ age_tot <- mdcr_enroll_ab_4 |>
                                           "85_94" ~ "85-94",
                                           "95_gt" ~ "95 and Older"))
 
-age_pct <- mdcr_enroll_ab_4 |> 
+age_pct <- enroll_4 |> 
   dplyr::select(year, dplyr::contains("pct")) |> 
   tidyr::pivot_longer(!year, names_to = "group", values_to = "percentage") |> 
   dplyr::mutate(group = stringr::str_remove(group, "pct_"),
@@ -111,7 +111,7 @@ age_groups |>
 Part A and/or Part B Enrollees by Demographics, 2013-2021
 
 ```{r mdcr_enroll_ab_5}
-mdcr_enroll_ab_5
+enroll_5
 ```
 
 <br>
@@ -148,7 +148,7 @@ Individuals who have chronic kidney disease requiring renal dialysis or a kidney
 Part A and/or Part B Enrollees by Type of Entitlement and Demographics, 2013-2021
 
 ```{r mdcr_enroll_ab_6}
-mdcr_enroll_ab_6
+enroll_6
 ```
 
 <br>
@@ -157,7 +157,7 @@ Part A and/or Part B Total, Aged, and Disabled Enrollees by Area of
 Residence, 2013-2021
 
 ```{r mdcr_enroll_ab_7}
-mdcr_enroll_ab_7
+enroll_7
 ```
 
 <br>
@@ -166,7 +166,7 @@ Part A and/or Part B Enrollees, by Type of Entitlement and Area of
 Residence, 2013-2021
 
 ```{r mdcr_enroll_ab_8}
-mdcr_enroll_ab_8
+enroll_8
 ```
 
 <br>
