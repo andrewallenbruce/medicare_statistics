@@ -17,3 +17,4 @@ The **CMS Program Statistics** (CPS) includes high-level summary reports focused
 2.  [Original Medicare & Medicare Advantage Enrollment](https://andrewallenbruce.github.io/medicare_statistics/enrollment.html)
 3.  [Medicare Parts A & B Enrollment](https://andrewallenbruce.github.io/medicare_statistics/partsab.html)
 4.  [Time Series](https://andrewallenbruce.github.io/medicare_statistics/timeseries.html)
+5.  [Comparisons](https://andrewallenbruce.github.io/medicare_statistics/monthly.html)

@@ -7,6 +7,7 @@ googlesheets4::gs4_deauth()
 # and Other Health Plan Enrollment, Yearly Trend
 mdcr_enroll_ab_1 <- googlesheets4::read_sheet(ss = medicare_enrollment, sheet = "mdcr_enroll_ab_1")
 readr::write_rds(mdcr_enroll_ab_1, "data/mdcr_enroll_ab_1.rds", "xz", compression = 9L)
+# readr::read_rds(here::here("data", "mdcr_enroll_ab_1.rds"))
 
 enroll_clean_1 <- mdcr_enroll_ab_1 |> 
   dplyr::select(year,
@@ -367,8 +368,48 @@ readr::write_rds(enroll_clean_21, "data/clean/enroll_clean_21.rds", "xz", compre
 mdcr_enroll_ab_22 <- googlesheets4::read_sheet(ss = medicare_new, sheet = "mdcr_enroll_ab_22")
 readr::write_rds(mdcr_enroll_ab_22, "data/mdcr_enroll_ab_22.rds", "xz", compression = 9L)
 
+mdcr_enroll_ab_22 <- readr::read_rds(here::here("data", "mdcr_enroll_ab_22.rds"))
 enroll_clean_22 <- mdcr_enroll_ab_22 |> 
-  dplyr::mutate(Year = as.integer(Year))
+  janitor::clean_names() |> 
+  dplyr::mutate(year = as.integer(year)) |> 
+  change_abs(total, year) |> 
+  change_pct(total, total_chg, year) |> 
+  change_abs(january, year) |> 
+  change_pct(january, january_chg, year) |> 
+  pct(january, total) |> 
+  change_abs(february, year) |> 
+  change_pct(february, february_chg, year) |> 
+  pct(february, total) |> 
+  change_abs(march, year) |> 
+  change_pct(march, march_chg, year) |> 
+  pct(march, total) |> 
+  change_abs(april, year) |> 
+  change_pct(april, april_chg, year) |> 
+  pct(april, total) |> 
+  change_abs(may, year) |> 
+  change_pct(may, may_chg, year) |> 
+  pct(may, total) |> 
+  change_abs(june, year) |> 
+  change_pct(june, june_chg, year) |> 
+  pct(june, total) |> 
+  change_abs(july, year) |> 
+  change_pct(july, july_chg, year) |> 
+  pct(july, total) |> 
+  change_abs(august, year) |> 
+  change_pct(august, august_chg, year) |> 
+  pct(august, total) |> 
+  change_abs(september, year) |> 
+  change_pct(september, september_chg, year) |> 
+  pct(september, total) |> 
+  change_abs(october, year) |> 
+  change_pct(october, october_chg, year) |> 
+  pct(october, total) |> 
+  change_abs(november, year) |> 
+  change_pct(november, november_chg, year) |> 
+  pct(november, total) |> 
+  change_abs(december, year) |> 
+  change_pct(december, december_chg, year) |> 
+  pct(december, total)
 
 readr::write_rds(enroll_clean_22, "data/clean/enroll_clean_22.rds", "xz", compression = 9L)
 

@@ -1,0 +1,491 @@
+---
+title: "Medicare Enrollment"
+subtitle: "Total, Deaths, & New Enrollments, 2008 - 2021"
+author: "Andrew Bruce"
+format: 
+  html:
+    theme: zephyr
+    toc: true
+    number-sections: false
+date: last-modified
+code-fold: true
+code-overflow: scroll
+---
+
+```{r setup}
+#| echo: false
+#| eval: true
+#| message: false
+#| warning: false
+source(here::here("R", "utils.R"))
+source(here::here("R", "monthly.R"))
+library(tidyverse)
+library(scalesextra)
+library(ggiraph)
+library(patchwork)
+library(ggstream)
+```
+
+
+# Enrollment
+
+Beneficiary Enrollment by Year, 2008-2021
+
+```{r}
+#| message: false
+enrollment <- enroll_1 |> 
+  dplyr::mutate(group = "Enrollment", 
+                .after = year)
+enrollment |> 
+  dplyr::select(year, group, dplyr::contains("pct_chg")) |> 
+  dplyr::filter(year != 2008L) |> 
+  dplyr::mutate(year = as_date(parsedate::parse_date(year))) |> 
+  ggplot2::ggplot(aes(x = year)) +
+  geom_line(aes(y = total_pct_chg), linewidth = 0.5, linetype = 2, color = thematic::okabe_ito(3)[1]) + 
+  geom_line(aes(y = original_pct_chg), linewidth = 0.5, linetype = 1, color = thematic::okabe_ito(3)[3]) + 
+  geom_line(aes(y = ma_other_pct_chg), linewidth = 0.5, linetype = 1, color = thematic::okabe_ito(3)[2]) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%y", 
+               expand = c(0, 0)) +
+  ggthemes::theme_fivethirtyeight()
+```
+
+<br>
+
+# Deaths
+
+Beneficiary Deaths by Month, 2008-2021
+
+```{r}
+#| message: false
+deaths <- enroll_33 |> 
+  dplyr::mutate(group = "Deaths", 
+                .after = year)
+deaths
+```
+
+
+# New Enrollees
+
+New Enrollees by Month, 2008-2021
+
+```{r}
+#| message: false
+new_enroll <- enroll_22 |> 
+  dplyr::mutate(group = "New Enrollees", 
+                .after = year)
+new_enroll
+```
+
+<br>
+
+# Percentages of Total Enrollees
+
+## New Enrollees vs. Beneficiary Deaths
+
+```{r}
+#| message: false
+#| warning: false
+#| layout-ncol: 1
+#| fig-cap: 
+#|   - "Percentages of Total Enrollees"
+#|   - "Linear Regression"
+#|   - "Loess Regression"
+dth_new_pct <- dplyr::bind_rows(
+  enrollment[1:3], 
+  deaths[1:3], 
+  new_enroll[1:3]) |> 
+  tidyr::pivot_wider(
+    names_from = group, 
+    values_from = total) |> 
+  janitor::clean_names() |> 
+  dplyr::mutate(pct_death = deaths / enrollment,
+                pct_new = new_enrollees / enrollment,
+                year = as_date(parsedate::parse_date(year))) |> 
+  dplyr::select(year, 
+                Deaths = pct_death, 
+                "New Enrollees" = pct_new) |> 
+  tidyr::pivot_longer(!year, 
+                      names_to = "type", 
+                      values_to = "pct")
+
+dth_ends <- dth_new_pct |> 
+  dplyr::arrange(dplyr::desc(year)) |> 
+  dplyr::slice_head(n = 2) |> 
+  dplyr::pull(pct)
+
+dth_new_pct |>  
+  ggplot2::ggplot(aes(x = year, y = pct, color = type)) +
+  geom_line(linewidth = 0.5, linetype = 1) +
+  scale_y_continuous(
+    labels = scales::percent, 
+    sec.axis = ggplot2::sec_axis(~ ., breaks = dth_ends)) +
+  gghighlight::gghighlight(pct > 0, 
+                           label_key = type, 
+                           line_label_type = "sec_axis",
+                           use_group_by = FALSE) +
+  scale_color_manual(name = "", 
+                     values = c("red","steelblue")) +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%y", 
+               expand = c(0, 0)) +
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.position = "none",
+        legend.key = element_blank(),
+        axis.text.y.right = element_text(size = 10, 
+                                         family = "Karla", 
+                                         face = "bold")) +
+    labs(x = NULL, 
+         y = NULL, 
+         caption = "Source: Centers for Medicare & Medicaid Services. Plot by @aabrucehimni.")
+
+dth_new_pct |>  
+  ggplot2::ggplot(aes(x = year, y = pct, color = type)) +
+  geom_line(linewidth = 0.5, linetype = 2) +
+  scale_y_continuous(
+    labels = scales::percent, 
+    sec.axis = ggplot2::sec_axis(~ ., breaks = dth_ends)) +
+  gghighlight::gghighlight(pct > 0, 
+                           label_key = type, 
+                           line_label_type = "sec_axis",
+                           use_group_by = FALSE) +
+  scale_color_manual(name = "", 
+                     values = c("red","steelblue")) +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%y", 
+               expand = c(0, 0)) +
+  geom_smooth(method = lm, se = TRUE) +
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.position = "none",
+        legend.key = element_blank(),
+        axis.text.y.right = element_text(size = 10, 
+                                         family = "Karla", 
+                                         face = "bold")) +
+    labs(x = NULL, 
+         y = NULL, 
+         caption = "Source: Centers for Medicare & Medicaid Services. Plot by @aabrucehimni.")
+
+dth_new_pct |>  
+  ggplot2::ggplot(aes(x = year, y = pct, color = type)) +
+  geom_line(linewidth = 0.5, linetype = 2) +
+  scale_y_continuous(
+    labels = scales::percent, 
+    sec.axis = ggplot2::sec_axis(~ ., breaks = dth_ends)) +
+  gghighlight::gghighlight(pct > 0, 
+                           label_key = type, 
+                           line_label_type = "sec_axis",
+                           use_group_by = FALSE) +
+  scale_color_manual(name = "", 
+                     values = c("red","steelblue")) +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%y", 
+               expand = c(0, 0)) +
+  geom_smooth(span = 0.8) +
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.position = "none",
+        legend.key = element_blank(),
+        axis.text.y.right = element_text(size = 10, 
+                                         family = "Karla", 
+                                         face = "bold")) +
+    labs(x = NULL, 
+         y = NULL, 
+         caption = "Source: Centers for Medicare & Medicaid Services. Plot by @aabrucehimni.")
+```
+
+<br>
+
+# Original Medicare vs. Medicare Advantage
+
+```{r}
+#| message: false
+#| warning: false
+#| layout-ncol: 1
+#| fig-cap: 
+#|   - "Percentages of Total Enrollees"
+#|   - "Linear Regression"
+orig_ma_pct <- enrollment |> 
+  dplyr::select(year, 
+                "Original Medicare" = original_pct, 
+                "Medicare Advantage" = ma_other_pct) |> 
+  dplyr::mutate(year = as_date(parsedate::parse_date(year))) |> 
+  tidyr::pivot_longer(!year, 
+                      names_to = "type", 
+                      values_to = "pct")
+
+origma_ends <- orig_ma_pct |> 
+  dplyr::arrange(dplyr::desc(year)) |> 
+  dplyr::slice_head(n = 2) |> 
+  dplyr::pull(pct)
+
+orig_ma_pct |>  
+  ggplot2::ggplot(aes(x = year, y = pct, color = type)) +
+  geom_line(linewidth = 0.5, linetype = 1) +
+  scale_y_continuous(
+    labels = scales::percent, 
+    sec.axis = ggplot2::sec_axis(~ ., breaks = origma_ends)) +
+  gghighlight::gghighlight(pct > 0, 
+                           label_key = type, 
+                           line_label_type = "sec_axis",
+                           use_group_by = FALSE) +
+  scale_color_manual(name = "", 
+                     values = c("red","steelblue")) +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%y", 
+               expand = c(0, 0)) +
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.position = "none",
+        legend.key = element_blank(),
+        axis.text.y.right = element_text(size = 10, 
+                                         family = "Karla", 
+                                         face = "bold")) +
+    labs(x = NULL, 
+         y = NULL, 
+         caption = "Source: Centers for Medicare & Medicaid Services. Plot by @aabrucehimni.")
+
+orig_ma_pct |>  
+  ggplot2::ggplot(aes(x = year, y = pct, color = type)) +
+  geom_line(linewidth = 0.5, linetype = 2) +
+  scale_y_continuous(
+    labels = scales::percent, 
+    sec.axis = ggplot2::sec_axis(~ ., breaks = origma_ends)) +
+  gghighlight::gghighlight(pct > 0, 
+                           label_key = type, 
+                           line_label_type = "sec_axis",
+                           use_group_by = FALSE) +
+  scale_color_manual(name = "", 
+                     values = c("red","steelblue")) +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%y", 
+               expand = c(0, 0)) +
+  geom_smooth(method = lm, se = TRUE) +
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.position = "none",
+        legend.key = element_blank(),
+        axis.text.y.right = element_text(size = 10, 
+                                         family = "Karla", 
+                                         face = "bold")) +
+    labs(x = NULL, 
+         y = NULL, 
+         caption = "Source: Centers for Medicare & Medicaid Services. Plot by @aabrucehimni.")
+```
+
+<br>
+
+```{r}
+#| message: false
+#| warning: false
+#| layout-ncol: 1
+#| fig-cap: 
+#|   - "Percentages of Total Enrollees"
+#|   - "Linear Regression"
+orig_ma_res_pct <- enroll_2 |> 
+  dplyr::select(year,
+                residence = area_of_residence,
+                "Original Medicare" = original_pct,
+                "Medicare Advantage" = ma_other_pct) |> 
+  tidyr::pivot_longer(cols = dplyr::contains("Medicare"), 
+                      names_to = "type", 
+                      values_to = "pct") |> 
+  dplyr::mutate(year = as_date(parsedate::parse_date(year)))
+
+avg <- orig_ma_res_pct |> 
+  dplyr::filter(residence != "United States") |> 
+  dplyr::group_by(year, type) |> 
+  dplyr::summarise(pct = mean(pct), 
+                   .groups = "drop") |> 
+  dplyr::mutate(residence = "Average", 
+                .after = year)
+
+orig_ma_res_pct <- dplyr::bind_rows(orig_ma_res_pct, avg)
+
+orig_res_ends <- orig_ma_res_pct |> 
+  dplyr::filter(residence == "United States") |> 
+  dplyr::arrange(dplyr::desc(year)) |> 
+  dplyr::slice_head(n = 2) |> 
+  dplyr::filter(type == "Original Medicare") |> 
+  dplyr::pull(pct)
+
+orig_ma_res_pct |>  
+  dplyr::filter(type == "Original Medicare") |> 
+  ggplot2::ggplot(aes(x = year, y = pct, color = residence)) +
+  geom_line(linewidth = 1.5, linetype = 1) +
+  gghighlight::gghighlight(residence %in% c("United States", 
+                                            #"Alaska", 
+                                            #"Minnesota", 
+                                            "Average"), 
+                           label_key = residence,
+                           use_direct_label = TRUE,
+                           use_group_by = FALSE,
+                           unhighlighted_params = list(linewidth = 0.5)
+                           ) +
+  geom_hline(yintercept = 0.5, linewidth = 1, linetype = 2, col = "grey40") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_color_manual(name = "",
+                     values = thematic::okabe_ito(4)) +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%y", 
+               expand = c(0, 0)) +
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.position = "none",
+        legend.key = element_blank(),
+        axis.text.y.right = element_text(size = 10, 
+                                         family = "Karla", 
+                                         face = "bold")) +
+    labs(x = NULL, 
+         y = NULL, 
+         title = "Original Medicare Enrollees (%)",
+         caption = "Source: Centers for Medicare & Medicaid Services. Plot by @aabrucehimni.")
+
+orig_ma_res_pct |>  
+  dplyr::filter(type == "Medicare Advantage") |> 
+  ggplot2::ggplot(aes(x = year, y = pct, color = residence)) +
+  geom_line(linewidth = 1.5, linetype = 1) +
+  gghighlight::gghighlight(residence %in% c("United States", 
+                                            #"Alaska", 
+                                            #"Minnesota", 
+                                            "Average"), 
+                           label_key = residence,
+                           use_direct_label = TRUE,
+                           use_group_by = FALSE,
+                           unhighlighted_params = list(linewidth = 0.5)
+                           ) +
+  geom_hline(yintercept = 0.5, linewidth = 1, linetype = 2, col = "grey40") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_color_manual(name = "",
+                     values = thematic::okabe_ito(4)) +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%y", 
+               expand = c(0, 0)) +
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.position = "none",
+        legend.key = element_blank(),
+        axis.text.y.right = element_text(size = 10, 
+                                         family = "Karla", 
+                                         face = "bold")) +
+    labs(x = NULL, 
+         y = NULL, 
+         title = "Medicare Advantage Enrollees (%)",
+         caption = "Source: Centers for Medicare & Medicaid Services. Plot by @aabrucehimni.")
+```
+
+<br>
+
+```{r}
+#| message: false
+#| warning: false
+#| eval: false
+#| echo: false
+dat <- enroll_2 |> 
+  dplyr::select(year,
+                residence = area_of_residence,
+                "Original Medicare" = original_pct,
+                "Medicare Advantage" = ma_other_pct) |> 
+  tidyr::pivot_longer(cols = dplyr::contains("Medicare"),
+                      names_to = "type",
+                      values_to = "pct") |>
+  dplyr::mutate(year = as_date(parsedate::parse_date(year)),
+                residence = factor(residence),
+                type = factor(type),
+                id_type = levels(type)[as.numeric(type)],
+                id_res = levels(residence)[as.numeric(residence)],
+                residence = forcats::fct_reorder(residence, pct),
+                type = forcats::fct_reorder(type, pct))
+
+gg_original <- dat |>  
+  dplyr::filter(type == "Original Medicare") |> 
+  ggplot2::ggplot(aes(x = year, 
+                      y = pct, 
+                      color = residence, 
+                      data_id = id_res,
+                      tooltip = residence)) +
+  geom_line_interactive(linewidth = 1.5) +
+  geom_point_interactive(size = 3, hover_nearest = TRUE) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_color_manual(name = "",
+                     values = viridisLite::viridis(n = 52)) +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%y", 
+               expand = c(0, 0)) +
+  geom_hline(yintercept = 0.5, linewidth = 2, linetype = 2, col = "grey10") +
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.position = "none",
+        legend.key = element_blank(),
+        axis.text.y.right = element_text(size = 10, 
+                                         family = "Karla", 
+                                         face = "bold")) +
+    labs(x = NULL, 
+         y = NULL, 
+         title = "Original Medicare",
+         caption = "Source: Centers for Medicare & Medicaid Services. Plot by @aabrucehimni.")
+
+gg_advantage <- dat |>  
+  dplyr::filter(type == "Medicare Advantage") |> 
+  ggplot2::ggplot(aes(x = year, 
+                      y = pct, 
+                      color = residence, 
+                      data_id = id_res,
+                      tooltip = residence)) +
+  geom_line_interactive(linewidth = 1.5) +
+  geom_point_interactive(size = 3, hover_nearest = TRUE) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_color_manual(name = "",
+                     values = viridisLite::viridis(n = 52)) +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%y", 
+               expand = c(0, 0)) +
+  geom_hline(yintercept = 0.5, linewidth = 2, linetype = 2, col = "grey10") +
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.position = "none",
+        legend.key = element_blank(),
+        axis.text.y.right = element_text(size = 10, 
+                                         family = "Karla", 
+                                         face = "bold")) +
+    labs(x = NULL, 
+         y = NULL, 
+         title = "Medicare Advantage",
+         caption = "Source: Centers for Medicare & Medicaid Services. Plot by @aabrucehimni.")
+
+girafe(
+  code = print(gg_original / gg_advantage),
+  options = list(
+    opts_hover(css = "stroke-width:4;"),
+    opts_hover_inv(css = "opacity:0.1;"),
+    opts_sizing(rescale = FALSE)
+  ),
+  height_svg = 15,
+  width_svg = 10
+  )
+```
+
+
+```{r}
+orig_ma <- enrollment |> 
+  dplyr::select(year, 
+                "Original" = original, 
+                "Advantage" = ma_other) |> 
+  tidyr::pivot_longer(!year, 
+                      names_to = "type", 
+                      values_to = "n") |> 
+  dplyr::mutate(year = as_date(parsedate::parse_date(year)))
+
+orig_ma_prop <- enrollment |> 
+  dplyr::select(year, 
+                "Original" = original_pct, 
+                "Advantage" = ma_other_pct) |> 
+  tidyr::pivot_longer(!year, 
+                      names_to = "type", 
+                      values_to = "pct")
+
+ggplot(orig_ma, aes(year, n, 
+                    fill = type, 
+                    label = type)) +
+  geom_stream(type = "ridge") +
+  geom_stream_label(size = 4, type = "ridge") + 
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%y", 
+               expand = c(0, 0)) +
+  ggthemes::theme_fivethirtyeight() +
+  theme(legend.position = "none")
+```
+
