@@ -7,8 +7,9 @@ format:
     theme: zephyr
     toc: true
     number-sections: false
+    code-tools: true
 date: last-modified
-code-fold: true
+code-fold: false
 code-overflow: scroll
 ---
 
@@ -17,13 +18,21 @@ code-overflow: scroll
 #| eval: true
 #| message: false
 #| warning: false
+
 source(here::here("R", "utils.R"))
 source(here::here("R", "monthly.R"))
+#source(here::here("reactable.css"))
+
 library(tidyverse)
 library(scalesextra)
-library(ggiraph)
-library(patchwork)
-library(ggstream)
+#library(ggiraph)
+#library(patchwork)
+library(reactable)
+library(reactablefmtr)
+library(htmltools)
+
+htmltools::tags$link(href = "https://fonts.googleapis.com/css?family=Karla:400,700|Fira+Mono&display=fallback", 
+                     rel = "stylesheet")
 ```
 
 
@@ -36,22 +45,7 @@ Beneficiary Enrollment by Year, 2008-2021
 enrollment <- enroll_1 |> 
   dplyr::mutate(group = "Enrollment", 
                 .after = year)
-enrollment |> 
-  dplyr::select(year, group, dplyr::contains("pct_chg")) |> 
-  dplyr::filter(year != 2008L) |> 
-  dplyr::mutate(year = as_date(parsedate::parse_date(year))) |> 
-  ggplot2::ggplot(aes(x = year)) +
-  geom_line(aes(y = total_pct_chg), linewidth = 0.5, linetype = 2, color = thematic::okabe_ito(3)[1]) + 
-  geom_line(aes(y = original_pct_chg), linewidth = 0.5, linetype = 1, color = thematic::okabe_ito(3)[3]) + 
-  geom_line(aes(y = ma_other_pct_chg), linewidth = 0.5, linetype = 1, color = thematic::okabe_ito(3)[2]) +
-  scale_y_continuous(labels = scales::percent) +
-  scale_x_date(date_breaks = "1 year",
-               date_labels = "%y", 
-               expand = c(0, 0)) +
-  ggthemes::theme_fivethirtyeight()
 ```
-
-<br>
 
 # Deaths
 
@@ -59,12 +53,117 @@ Beneficiary Deaths by Month, 2008-2021
 
 ```{r}
 #| message: false
+#| column: page
+#| layout-align: center
+#| layout-valign: center
 deaths <- enroll_33 |> 
   dplyr::mutate(group = "Deaths", 
                 .after = year)
-deaths
+
+years <- deaths$year
+
+deaths_mon <- deaths |> 
+  dplyr::select(dplyr::contains(tolower(month.name)),
+                -dplyr::contains("_"))
+
+names(deaths_mon)[1:12] <- toupper(month.abb)
+deaths_mon$Year <- as.character(years)
+deaths_mon <- deaths_mon |> dplyr::relocate(Year)
+
+deaths_mon_avg <- deaths_mon |> 
+  dplyr::summarise(dplyr::across(JAN:DEC, ~ round(mean(.x)))) |> 
+  dplyr::mutate(Year = "AVG", .before = JAN)
+
+deaths_mon_2 <- dplyr::bind_rows(deaths_mon, deaths_mon_avg)
+
+temppal <- c('#36a1d6', '#76b8de', '#a0bfd9', '#ffffff', '#d88359', '#d65440', '#c62c34')
 ```
 
+
+```{r}
+#| message: false
+#| column: page
+#| layout-align: center
+#| layout-valign: center
+reactable(deaths_mon_2,
+          pagination = FALSE,
+          compact = TRUE,
+          highlight = TRUE,
+          defaultColDef = colDef(
+            # footer = function(values) {
+            #   if (!is.numeric(values)) return()
+            #   format(round(mean(values)), big.mark = ",")
+            #   },
+            # footerStyle = list(fontWeight = "bold"),
+            headerClass = "header", 
+            align = "center", 
+            defaultSortOrder = "desc",
+            style = color_scales(deaths_mon_2,
+                                 span = TRUE,
+                                 colors = temppal,
+                                 bias = 2.5),
+                                 maxWidth = 85),
+          columns = list(
+            #Year = colDef(footer = "AVG"),
+            JAN = colDef(format = colFormat(separators = TRUE)),
+            FEB = colDef(format = colFormat(separators = TRUE)),
+            MAR = colDef(format = colFormat(separators = TRUE)),
+            APR = colDef(format = colFormat(separators = TRUE)),
+            MAY = colDef(format = colFormat(separators = TRUE)),
+            JUN = colDef(format = colFormat(separators = TRUE)),
+            JUL = colDef(format = colFormat(separators = TRUE)),
+            AUG = colDef(format = colFormat(separators = TRUE)),
+            SEP = colDef(format = colFormat(separators = TRUE)),
+            OCT = colDef(format = colFormat(separators = TRUE)),
+            NOV = colDef(format = colFormat(separators = TRUE)),
+            DEC = colDef(format = colFormat(separators = TRUE)))) |> 
+  add_title("Medicare Beneficiary Deaths by Month") |> 
+  add_source("Source: Centers for Medicare & Medicaid Services.")
+```
+
+<br>
+
+```{r}
+#| message: false
+#| column: page
+#| layout-align: center
+#| layout-valign: center
+deaths_yr <- deaths_mon |> 
+  tidyr::pivot_longer(!Year,
+                      names_to = "Month",
+                      values_to = "deaths") |> 
+  tidyr::pivot_wider(names_from = Year,
+                     values_from = deaths)
+
+deaths_yr_avg <- deaths_yr |> 
+  dplyr::summarise(dplyr::across(2:15, ~ round(mean(.x)))) |> 
+  dplyr::mutate(Month = "AVG", .before = "2008")
+
+deaths_yr_2 <- dplyr::bind_rows(deaths_mon, deaths_mon_avg)
+
+reactable(deaths_yr_2,
+          pagination = FALSE,
+          compact = TRUE,
+          defaultColDef = colDef(
+            # footer = function(values) {
+            #   if (!is.numeric(values)) return()
+            #   format(round(mean(values)), big.mark = ",")
+            #   },
+            # footerStyle = list(fontWeight = "bold"),
+            format = colFormat(separators = TRUE),
+            headerClass = "header", 
+            align = "center", 
+            defaultSortOrder = "desc",
+            style = color_scales(deaths_yr_2,
+                                 span = TRUE,
+                                 colors = temppal,
+                                 bias = 2.5),
+                                 maxWidth = 85)
+          #columns = list(Month = colDef(footer = "AVG"))
+          ) |> 
+  add_title("Medicare Beneficiary Deaths by Year") |> 
+  add_source("Source: Centers for Medicare & Medicaid Services.")
+```
 
 # New Enrollees
 
@@ -75,7 +174,61 @@ New Enrollees by Month, 2008-2021
 new_enroll <- enroll_22 |> 
   dplyr::mutate(group = "New Enrollees", 
                 .after = year)
-new_enroll
+```
+
+
+```{r}
+#| warning: false
+#| message: false
+enroll_pctchg <- enrollment |> 
+  dplyr::select(year, dplyr::contains("pct_chg"))
+
+deaths_pctchg <- deaths |> 
+  dplyr::select(year, deaths_pct_chg = total_pct_chg)
+
+new_pctchg <- new_enroll |> 
+  dplyr::select(year, new_pct_chg = total_pct_chg)
+
+pct_chg <- dplyr::full_join(enroll_pctchg, 
+                            deaths_pctchg, 
+                            by = dplyr::join_by(year)) |> 
+  dplyr::full_join(new_pctchg, 
+                   by = dplyr::join_by(year))
+
+pct_ends <- pct_chg |> 
+  dplyr::arrange(dplyr::desc(year)) |> 
+  dplyr::slice_head(n = 1) |> 
+  tidyr::pivot_longer(!year, names_to = "type", values_to = "pct") |> 
+  dplyr::pull(pct)
+
+pct_chg |> 
+  dplyr::filter(year != 2008L) |> 
+  dplyr::mutate(year = as_date(parsedate::parse_date(year))) |> 
+  tidyr::pivot_longer(!year, names_to = "type", values_to = "pct") |> 
+  dplyr::mutate(type = stringr::str_to_title(type),
+                type = stringr::str_remove(type, "_pct_chg"),
+                type = dplyr::case_match(type,
+                                         "Ma_other" ~ "Advantage",
+                                         "New" ~ "New Enrollees",
+                                         .default = type)) |> 
+  ggplot2::ggplot(aes(x = year)) +
+  geom_line(aes(y = pct, color = type), linewidth = 1) +
+  scale_y_continuous(labels = scales::percent, 
+                     sec.axis = ggplot2::sec_axis(~ ., 
+                                                  breaks = pct_ends)) +
+  gghighlight::gghighlight(pct > -1, 
+                           label_key = type, 
+                           line_label_type = "sec_axis", 
+                           use_group_by = FALSE) +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%y", 
+               expand = c(0, 0)) +
+  ggthemes::theme_fivethirtyeight() + 
+  theme(legend.position = "none",
+        legend.key = element_blank(),
+        axis.text.y.right = element_text(size = 10, family = "Karla", face = "bold")) +
+    labs(x = NULL, y = NULL, caption = "Plot by @aabrucehimni")
+#color = thematic::okabe_ito(8)[1]) 
 ```
 
 <br>
@@ -460,6 +613,10 @@ girafe(
 
 
 ```{r}
+#| message: false
+#| warning: false
+#| eval: false
+#| echo: false
 orig_ma <- enrollment |> 
   dplyr::select(year, 
                 "Original" = original, 
@@ -487,5 +644,73 @@ ggplot(orig_ma, aes(year, n,
                expand = c(0, 0)) +
   ggthemes::theme_fivethirtyeight() +
   theme(legend.position = "none")
+```
+
+
+
+```{css}
+.twitter-followers {
+  margin: 0 auto;
+  width: 575px;
+  font-family: Karla, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.followers-header {
+  margin: 1.125rem 0;
+  font-size: 1rem;
+}
+
+.followers-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.followers-tbl {
+  font-size: 0.875rem;
+  line-height: 1.125rem;
+}
+
+.followers-tbl a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.followers-tbl a:hover,
+.followers-tbl a:focus {
+  text-decoration: underline;
+  text-decoration-thickness: max(1px, 0.0625rem);
+}
+
+.header {
+  border-bottom: 2px solid #555;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
+.header:hover {
+  background-color: #eee;
+}
+
+.bar-cell {
+  display: flex;
+  align-items: center;
+}
+
+.number {
+  font-family: "Fira Mono", Consolas, Monaco, monospace;
+  font-size: 0.84375rem;
+  white-space: pre;
+}
+
+.bar-chart {
+  flex-grow: 1;
+  margin-left: 0.375rem;
+  height: 0.875rem;
+}
+
+.bar {
+  height: 100%;
+}
 ```
 
